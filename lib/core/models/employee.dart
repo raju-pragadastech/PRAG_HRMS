@@ -15,6 +15,14 @@ class Employee {
   final String? profileImage;
   final String? joinDate;
   final String? status;
+  final String? address;
+  final String? dateOfBirth;
+  final String? emergencyContact;
+  final String? manager;
+  final String? workLocation;
+  final String? experience;
+  final String? education;
+  final List<String>? skills;
 
   const Employee({
     this.employeeId,
@@ -28,6 +36,14 @@ class Employee {
     this.profileImage,
     this.joinDate,
     this.status,
+    this.address,
+    this.dateOfBirth,
+    this.emergencyContact,
+    this.manager,
+    this.workLocation,
+    this.experience,
+    this.education,
+    this.skills,
   });
 
   factory Employee.fromJson(Map<String, dynamic> json) {
@@ -52,11 +68,24 @@ class Employee {
       profileImage: json['profileImage'] ?? json['avatar'] ?? json['image'],
       joinDate: json['joinDate'] ?? json['joiningDate'] ?? json['startDate'],
       status: json['status'] ?? json['employeeStatus'],
+      address: json['address'] ?? json['homeAddress'] ?? json['location'],
+      dateOfBirth: json['dateOfBirth'] ?? json['birthDate'] ?? json['dob'],
+      emergencyContact: json['emergencyContact'] ?? json['emergencyPhone'] ?? json['emergencyNumber'],
+      manager: json['manager'] ?? json['reportingManager'] ?? json['supervisor'],
+      workLocation: json['workLocation'] ?? json['officeLocation'] ?? json['location'],
+      experience: json['experience'] ?? json['workExperience'] ?? json['yearsOfExperience'],
+      education: json['education'] ?? json['qualification'] ?? json['degree'],
+      skills: json['skills'] != null 
+          ? (json['skills'] is List 
+              ? (json['skills'] as List).map((e) => e.toString()).toList()
+              : [json['skills'].toString()])
+          : null,
     );
 
     print(
       '📥 Created Employee: firstName="${employee.firstName}", lastName="${employee.lastName}", fullName="${employee.fullName}"',
     );
+    print('📥 Additional fields: address="${employee.address}", manager="${employee.manager}", workLocation="${employee.workLocation}"');
     return employee;
   }
 

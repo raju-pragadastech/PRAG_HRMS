@@ -44,6 +44,34 @@ class StorageService {
     return await _storage.read(key: ApiConstants.userRoleKey);
   }
 
+  // Save device ID
+  static Future<void> saveDeviceId(String deviceId) async {
+    print('💾 Saving device ID: $deviceId');
+    await _storage.write(key: ApiConstants.deviceIdKey, value: deviceId);
+    print('💾 Device ID saved successfully');
+  }
+
+  // Get device ID
+  static Future<String?> getDeviceId() async {
+    final deviceId = await _storage.read(key: ApiConstants.deviceIdKey);
+    print('💾 Retrieved device ID: $deviceId');
+    return deviceId;
+  }
+
+  // Save device name
+  static Future<void> saveDeviceName(String deviceName) async {
+    print('💾 Saving device name: $deviceName');
+    await _storage.write(key: ApiConstants.deviceNameKey, value: deviceName);
+    print('💾 Device name saved successfully');
+  }
+
+  // Get device name
+  static Future<String?> getDeviceName() async {
+    final deviceName = await _storage.read(key: ApiConstants.deviceNameKey);
+    print('💾 Retrieved device name: $deviceName');
+    return deviceName;
+  }
+
   // Check if user is logged in
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
@@ -52,12 +80,25 @@ class StorageService {
 
   // Clear all stored data (logout)
   static Future<void> clearAll() async {
+    print('💾 Clearing all stored data...');
     await _storage.deleteAll();
+    print('💾 All stored data cleared successfully');
   }
 
   // Clear specific key
   static Future<void> clearKey(String key) async {
     await _storage.delete(key: key);
+  }
+
+  // Clear employee-related data specifically
+  static Future<void> clearEmployeeData() async {
+    print('💾 Clearing employee-related data...');
+    await _storage.delete(key: 'employee_data');
+    await _storage.delete(key: 'detailed_employee_profile');
+    await _storage.delete(key: 'clock_in_data');
+    await _storage.delete(key: 'clock_out_data');
+    await _storage.delete(key: 'time_entries_data');
+    print('💾 Employee-related data cleared successfully');
   }
 
   // Save employee data (from login response)
@@ -102,5 +143,83 @@ class StorageService {
       return data;
     }
     return null;
+  }
+
+  // Save clock-in data
+  static Future<void> saveClockInData(Map<String, dynamic> clockInData) async {
+    print('💾 Saving clock-in data: $clockInData');
+    final jsonString = json.encode(clockInData);
+    await _storage.write(key: 'clock_in_data', value: jsonString);
+    print('💾 Clock-in data saved successfully');
+  }
+
+  // Get clock-in data
+  static Future<Map<String, dynamic>?> getClockInData() async {
+    final jsonString = await _storage.read(key: 'clock_in_data');
+    print('💾 Retrieved clock-in JSON: $jsonString');
+    if (jsonString != null) {
+      final data = json.decode(jsonString);
+      print('💾 Parsed clock-in data: $data');
+      return data;
+    }
+    return null;
+  }
+
+  // Save clock-out data
+  static Future<void> saveClockOutData(
+    Map<String, dynamic> clockOutData,
+  ) async {
+    print('💾 Saving clock-out data: $clockOutData');
+    final jsonString = json.encode(clockOutData);
+    await _storage.write(key: 'clock_out_data', value: jsonString);
+    print('💾 Clock-out data saved successfully');
+  }
+
+  // Get clock-out data
+  static Future<Map<String, dynamic>?> getClockOutData() async {
+    final jsonString = await _storage.read(key: 'clock_out_data');
+    print('💾 Retrieved clock-out JSON: $jsonString');
+    if (jsonString != null) {
+      final data = json.decode(jsonString);
+      print('💾 Parsed clock-out data: $data');
+      return data;
+    }
+    return null;
+  }
+
+  // Save time entries data
+  static Future<void> saveTimeEntriesData(
+    List<Map<String, dynamic>> timeEntries,
+  ) async {
+    print('💾 Saving time entries data: ${timeEntries.length} entries');
+    final jsonString = json.encode(timeEntries);
+    await _storage.write(key: 'time_entries_data', value: jsonString);
+    print('💾 Time entries data saved successfully');
+  }
+
+  // Get time entries data
+  static Future<List<Map<String, dynamic>>?> getTimeEntriesData() async {
+    final jsonString = await _storage.read(key: 'time_entries_data');
+    print('💾 Retrieved time entries JSON: $jsonString');
+    if (jsonString != null) {
+      final data = json.decode(jsonString);
+      print('💾 Parsed time entries data: ${data.length} entries');
+      return List<Map<String, dynamic>>.from(data);
+    }
+    return null;
+  }
+
+  // Save theme mode
+  static Future<void> saveThemeMode(String themeMode) async {
+    print('💾 Saving theme mode: $themeMode');
+    await _storage.write(key: 'app_theme', value: themeMode);
+    print('💾 Theme mode saved successfully');
+  }
+
+  // Get theme mode
+  static Future<String?> getThemeMode() async {
+    final themeMode = await _storage.read(key: 'app_theme');
+    print('💾 Retrieved theme mode: $themeMode');
+    return themeMode;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/employee.dart';
+import '../../../core/routes/app_routes.dart';
 
 class EmployeeProfileScreen extends StatefulWidget {
   const EmployeeProfileScreen({super.key});
@@ -61,7 +62,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
           print('📱 Profile data: ${employee.toJson()}');
         } else {
           setState(() {
-            _error = 'Failed to load detailed employee profile data';
+            _error = 'No employee data found. Please check your login status.';
           });
         }
       }
@@ -69,7 +70,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
       print('❌ Error loading detailed employee profile data: $e');
       if (mounted) {
         setState(() {
-          _error = 'Error loading profile: $e';
+          _error = 'Failed to load profile: ${e.toString()}';
           _isLoading = false;
         });
       }
@@ -178,6 +179,11 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             SlideTransition(
               position: _slideAnimation,
               child: _buildSkillsSection(),
+            ),
+            const SizedBox(height: 24),
+            SlideTransition(
+              position: _slideAnimation,
+              child: _buildSecuritySection(),
             ),
             const SizedBox(height: 20),
           ],
@@ -570,13 +576,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             _buildDetailRow(
               Icons.person_rounded,
               'Manager',
-              'Manager not specified',
+              'Vamshi Krishna M',
               Colors.purple,
             ),
             _buildDetailRow(
               Icons.location_on_rounded,
               'Work Location',
-              'Work location not specified',
+              'JNTU Road, Kukatpally Housing Board Colony, Kukatpally, Hyderabad',
               Colors.red,
             ),
           ],
@@ -715,6 +721,450 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         backgroundColor: Colors.blue,
       ),
     );
+  }
+
+  Widget _buildSecuritySection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.security_rounded,
+                    color: Colors.red,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Security & Privacy',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildSecurityOption(
+              icon: Icons.devices_rounded,
+              title: 'Active Device Sessions',
+              subtitle: 'View all devices where you are currently logged in',
+              color: Colors.blue,
+              onTap: _showDeviceSessionsDialog,
+            ),
+            _buildSecurityOption(
+              icon: Icons.logout_rounded,
+              title: 'Logout from This Device',
+              subtitle:
+                  'Sign out from this device only (other devices remain logged in)',
+              color: Colors.blue,
+              onTap: _showLogoutCurrentDeviceDialog,
+            ),
+            _buildSecurityOption(
+              icon: Icons.logout_rounded,
+              title: 'Logout from All Devices',
+              subtitle:
+                  'Sign out from all devices and require re-authentication',
+              color: Colors.orange,
+              onTap: _showLogoutAllDevicesDialog,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecurityOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutCurrentDeviceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Logout from This Device'),
+          ],
+        ),
+        content: const Text(
+          'This will sign you out from this device only. You will remain logged in on other devices. You will need to log in again on this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logoutFromCurrentDevice();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout This Device'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutAllDevicesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Logout from All Devices'),
+          ],
+        ),
+        content: const Text(
+          'This will sign you out from all devices where you are currently logged in. You will need to log in again on all devices. This is useful for security purposes or when switching devices.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _logoutFromAllDevices();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout All Devices'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeviceSessionsDialog() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Loading device sessions...'),
+            ],
+          ),
+        ),
+      );
+
+      // Get device sessions
+      final sessions = await AuthService.getDeviceSessions();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show device sessions dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Active Device Sessions'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: sessions.isEmpty
+                  ? const Text('No active device sessions found.')
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: sessions.length,
+                      itemBuilder: (context, index) {
+                        final session = sessions[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            leading: Icon(
+                              _getDeviceIcon(session['platform'] ?? 'unknown'),
+                              color: Colors.blue,
+                            ),
+                            title: Text(
+                              session['deviceName'] ?? 'Unknown Device',
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Device ID: ${session['deviceId'] ?? 'N/A'}',
+                                ),
+                                Text(
+                                  'Platform: ${session['platform'] ?? 'Unknown'}',
+                                ),
+                                Text(
+                                  'Last Active: ${session['lastActive'] ?? 'Unknown'}',
+                                ),
+                              ],
+                            ),
+                            trailing: session['isCurrentDevice'] == true
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'Current',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (mounted) Navigator.pop(context);
+
+      // Show error dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to load device sessions: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  IconData _getDeviceIcon(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'android':
+        return Icons.android;
+      case 'ios':
+        return Icons.phone_iphone;
+      case 'windows':
+        return Icons.laptop_windows;
+      case 'macos':
+        return Icons.laptop_mac;
+      case 'linux':
+        return Icons.laptop;
+      default:
+        return Icons.device_unknown;
+    }
+  }
+
+  Future<void> _logoutFromCurrentDevice() async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Logging out from this device...'),
+            ],
+          ),
+        ),
+      );
+
+      // Logout from current device
+      await AuthService.logoutCurrentDevice();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Successfully logged out from this device'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to logout from this device: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _logoutFromAllDevices() async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Logging out from all devices...'),
+            ],
+          ),
+        ),
+      );
+
+      // Logout from all devices
+      await AuthService.logoutAllDevices();
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Successfully logged out from all devices'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to logout from all devices: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showEditDialog() {

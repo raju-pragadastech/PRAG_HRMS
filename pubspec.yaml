@@ -43,6 +43,20 @@ dependencies:
   
   # JSON serialization
   json_annotation: ^4.8.1
+  
+  # GPS location services
+  geolocator: ^10.1.0
+  permission_handler: ^11.3.1
+  
+  # Device information
+  device_info_plus: ^10.1.0
+  package_info_plus: ^8.0.0
+  
+  # Cryptographic functions
+  crypto: ^3.0.3
+  
+  # State management
+  provider: ^6.1.1
 
 dev_dependencies:
   flutter_test:

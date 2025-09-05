@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 import '../../services/screens/services_screen.dart';
 import '../../announcements/screens/announcements_screen.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/services/theme_service.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/models/employee.dart';
+import '../../../core/widgets/theme_selector.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 1; // Start with Home (middle tab)
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  Employee? _employee;
+  bool _isLoadingEmployee = true;
 
   final List<Widget> _screens = [
     const ServicesScreen(),
@@ -21,48 +28,112 @@ class _HomeScreenState extends State<HomeScreen> {
     const AnnouncementsScreen(),
   ];
 
-  PreferredSizeWidget _buildUnifiedHeader() {
-    return AppBar(
-      backgroundColor: Colors.indigo,
-      foregroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.menu_rounded),
-        onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-      ),
-      title: const Text(
-        'HRMS',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      actions: [
-        // Profile Photo (Smaller)
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            onTap: () {
-              // Handle profile photo tap
-            },
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.2),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
+  @override
+  void initState() {
+    super.initState();
+    _loadEmployeeData();
+  }
+
+  Future<void> _loadEmployeeData() async {
+    try {
+      setState(() {
+        _isLoadingEmployee = true;
+      });
+
+      final employee = await AuthService.getCurrentUserProfile();
+
+      if (mounted) {
+        setState(() {
+          _employee = employee;
+          _isLoadingEmployee = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading employee data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingEmployee = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _refreshEmployeeData() async {
+    await _loadEmployeeData();
+  }
+
+  Widget _buildUnifiedHeader() {
+    return Consumer<ThemeService>(
+      builder: (context, themeService, child) {
+        return AppBar(
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+          ),
+          title: const Text(
+            'HRMS',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-        ),
-      ],
+          actions: [
+            // Theme Toggle Button
+            IconButton(
+              icon: Icon(
+                themeService.isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              onPressed: () => _showThemeSelector(),
+              tooltip: 'Theme Settings',
+            ),
+            // Profile Photo (Smaller)
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              child: GestureDetector(
+                onTap: () {
+                  // Handle profile photo tap
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.2),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: _employee?.profileImage != null
+                      ? ClipOval(
+                          child: Image.network(
+                            _employee!.profileImage!,
+                            width: 32,
+                            height: 32,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              );
+                            },
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -70,183 +141,271 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      appBar: _buildUnifiedHeader(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: _buildUnifiedHeader(),
+      ),
       drawer: _buildDrawer(),
       body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: Colors.indigo,
-          unselectedItemColor: Colors.grey,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-          ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.apps_rounded),
-              label: 'Services',
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) => setState(() => _currentIndex = index),
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              selectedItemColor: Theme.of(context).primaryColor,
+              unselectedItemColor: Colors.grey,
+              selectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w400,
+                fontSize: 12,
+              ),
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.apps_rounded),
+                  label: 'Services',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home_rounded),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.notifications_rounded),
+                  label: 'Announcements',
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_rounded),
-              label: 'Announcements',
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildDrawer() {
-    return Drawer(
-      width: MediaQuery.of(context).size.width * 0.65, // 65% of screen width
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.indigo, Colors.indigo.shade700],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: _showImagePicker,
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 2,
+    return Consumer<ThemeService>(
+      builder: (context, themeService, child) {
+        return Drawer(
+          width:
+              MediaQuery.of(context).size.width * 0.65, // 65% of screen width
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: _showImagePicker,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.2),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: _employee?.profileImage != null
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _employee!.profileImage!,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return const Icon(
+                                              Icons.person_rounded,
+                                              color: Colors.white,
+                                              size: 30,
+                                            );
+                                          },
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person_rounded,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                          ),
+                          // Refresh button
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _refreshEmployeeData,
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).primaryColor,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.refresh_rounded,
+                                  size: 12,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
+                    const SizedBox(height: 8),
+                    if (_isLoadingEmployee)
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        _employee?.fullName ?? 'Loading...',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    const SizedBox(height: 2),
+                    if (!_isLoadingEmployee)
+                      Text(
+                        _employee?.email ?? 'No email available',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    const SizedBox(height: 2),
+                    if (!_isLoadingEmployee)
+                      Text(
+                        'Employee ID: ${_employee?.employeeId ?? 'N/A'}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'John Doe',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'john.doe@company.com',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Employee ID: EMP001',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              _buildDrawerItem(
+                icon: Icons.dashboard_rounded,
+                title: 'Dashboard',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _currentIndex = 1); // Switch to Dashboard tab
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.person_rounded,
+                title: 'Profile',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.employeeProfile);
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.calendar_today_rounded,
+                title: 'Leave Management',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.leave);
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.access_time_rounded,
+                title: 'Attendance',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.attendance);
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.campaign_rounded,
+                title: 'Announcements',
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(
+                    () => _currentIndex = 2,
+                  ); // Switch to Announcements tab
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.support_agent_rounded,
+                title: 'Support',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.support);
+                },
+              ),
+              const Divider(),
+              _buildDrawerItem(
+                icon: Icons.palette_rounded,
+                title: 'Theme Settings',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showThemeSelector();
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.logout_rounded,
+                title: 'Logout',
+                onTap: () {
+                  Navigator.pop(context);
+                  _showLogoutDialog();
+                },
+              ),
+            ],
           ),
-          _buildDrawerItem(
-            icon: Icons.dashboard_rounded,
-            title: 'Dashboard',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() => _currentIndex = 1); // Switch to Dashboard tab
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.person_rounded,
-            title: 'Profile',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.employeeProfile);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.calendar_today_rounded,
-            title: 'Leave Management',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.leave);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.access_time_rounded,
-            title: 'Attendance',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.attendance);
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.campaign_rounded,
-            title: 'Announcements',
-            onTap: () {
-              Navigator.pop(context);
-              setState(() => _currentIndex = 2); // Switch to Announcements tab
-            },
-          ),
-          _buildDrawerItem(
-            icon: Icons.support_agent_rounded,
-            title: 'Support',
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, AppRoutes.support);
-            },
-          ),
-          const Divider(),
-          _buildDrawerItem(
-            icon: Icons.logout_rounded,
-            title: 'Logout',
-            onTap: () {
-              Navigator.pop(context);
-              _showLogoutDialog();
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -255,26 +414,36 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.indigo.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, child) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).primaryColor,
+                size: 20,
+              ),
+            ),
+            title: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+            ),
+            onTap: onTap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            hoverColor: Theme.of(context).primaryColor.withOpacity(0.05),
           ),
-          child: Icon(icon, color: Colors.indigo, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
-        ),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        hoverColor: Colors.indigo.withOpacity(0.05),
-      ),
+        );
+      },
     );
   }
 
@@ -400,6 +569,21 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  void _showThemeSelector() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: const ThemeSelector(),
+          ),
+        );
+      },
     );
   }
 

@@ -26,10 +26,15 @@ class LoginResponse {
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     print('📥 Parsing LoginResponse from JSON: $json');
+    print('📥 JSON keys: ${json.keys.toList()}');
+    print('📥 JSON values: ${json.values.toList()}');
 
     try {
       // Check if we have a success field
       bool success = json['success'] ?? false;
+      print(
+        '📥 Raw success field: ${json['success']} (type: ${json['success'].runtimeType})',
+      );
 
       // If no success field, determine success based on other indicators
       if (!success) {
@@ -43,6 +48,34 @@ class LoginResponse {
         print(
           '📥 Determined success: $success (hasToken: $hasToken, isSuccessfulMessage: $isSuccessfulMessage)',
         );
+      }
+
+      // Check for device limit errors in the JSON before parsing
+      final errorMessage = json['message']?.toString().toLowerCase() ?? '';
+      final errorType = json['error']?.toString().toLowerCase() ?? '';
+      print('📥 Checking for device limit in JSON:');
+      print('  - message: "$errorMessage"');
+      print('  - error: "$errorType"');
+
+      if (errorMessage.contains('device limit') ||
+          errorMessage.contains('multiple devices') ||
+          errorMessage.contains('too many devices') ||
+          errorMessage.contains('device not supported') ||
+          errorMessage.contains('maximum devices') ||
+          errorMessage.contains('device limit exceeded') ||
+          errorMessage.contains('device count') ||
+          errorMessage.contains('max devices') ||
+          errorMessage.contains('device quota') ||
+          errorMessage.contains('concurrent sessions') ||
+          errorMessage.contains('session limit') ||
+          errorMessage.contains('device registration') ||
+          errorMessage.contains('not supported') ||
+          errorMessage.contains('multiple device') ||
+          errorType.contains('device_limit') ||
+          errorType.contains('multiple_device') ||
+          errorType.contains('device_quota') ||
+          errorType.contains('session_limit')) {
+        print('🚫 Device limit detected in LoginResponse JSON parsing!');
       }
 
       return LoginResponse(

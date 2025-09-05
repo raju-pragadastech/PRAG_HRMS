@@ -3,18 +3,52 @@ import '../models/login_response.dart';
 import '../models/employee.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
+import 'device_service.dart';
+import 'theme_service.dart';
+import 'attendance_data_manager.dart';
 
 class AuthService {
+  static ThemeService? _themeService;
+
+  // Set theme service reference
+  static void setThemeService(ThemeService themeService) {
+    _themeService = themeService;
+  }
+
   // Login user
   static Future<LoginResponse> login(
     String employeeIdOrEmail,
     String password,
   ) async {
     try {
+      // Clear any existing employee data to ensure fresh start
+      await StorageService.clearEmployeeData();
+      print('🧹 Cleared existing employee data for fresh login');
+
+      // Get device information
+      final deviceInfo = await DeviceService.getDeviceInfo();
+      print('📱 ========== DEVICE INFO DEBUG ==========');
+      print('📱 Device ID: ${deviceInfo['deviceId']}');
+      print('📱 Device Name: ${deviceInfo['deviceName']}');
+      print('📱 App Version: ${deviceInfo['appVersion']}');
+      print('📱 Platform: ${deviceInfo['platform']}');
+      print('📱 Full Device Info: $deviceInfo');
+      print('📱 ========================================');
+
       final request = LoginRequest(
         employeeIdOrEmail: employeeIdOrEmail,
         password: password,
+        deviceId: deviceInfo['deviceId'],
+        deviceName: deviceInfo['deviceName'],
+        appVersion: deviceInfo['appVersion'],
+        platform: deviceInfo['platform'],
       );
+
+      print('📱 ========== LOGIN REQUEST DEBUG ==========');
+      print('📱 Employee ID/Email: $employeeIdOrEmail');
+      print('📱 Password Length: ${password.length}');
+      print('📱 Request JSON: ${request.toJson()}');
+      print('📱 ==========================================');
 
       final response = await ApiService.login(request);
       print(
@@ -33,6 +67,11 @@ class AuthService {
         await StorageService.saveToken(response.token!);
         await StorageService.saveEmployeeId(response.employeeId!);
         print('📱 Token and Employee ID saved');
+
+        // Save device information
+        await StorageService.saveDeviceId(deviceInfo['deviceId']!);
+        await StorageService.saveDeviceName(deviceInfo['deviceName']!);
+        print('📱 Device information saved');
 
         if (response.role != null) {
           await StorageService.saveUserRole(response.role!);
@@ -58,6 +97,12 @@ class AuthService {
         final savedEmployeeData = await StorageService.getEmployeeData();
         print('📱 Verification - Saved Employee ID: $savedEmployeeId');
         print('📱 Verification - Saved Employee Data: $savedEmployeeData');
+
+        // Set current user in attendance data manager
+        AttendanceDataManager().setCurrentUser(response.employeeId);
+
+        // Notify theme service that user is now authenticated
+        _themeService?.setAuthenticated(true);
       } else {
         print(
           '❌ Login response validation failed: success=${response.success}, token=${response.token != null}, employeeId=${response.employeeId}',
@@ -73,8 +118,20 @@ class AuthService {
   // Logout user
   static Future<void> logout() async {
     try {
+      print('🚪 Logging out user...');
+
+      // Clear attendance data first
+      AttendanceDataManager().clearAllData();
+
+      // Clear all stored data including employee profile data
       await StorageService.clearAll();
+
+      // Notify theme service that user is no longer authenticated
+      _themeService?.setAuthenticated(false);
+
+      print('🚪 User logged out successfully - all data cleared');
     } catch (e) {
+      print('❌ Logout error: $e');
       throw Exception('Logout failed: $e');
     }
   }
@@ -82,6 +139,82 @@ class AuthService {
   // Check if user is authenticated
   static Future<bool> isAuthenticated() async {
     return await StorageService.isLoggedIn();
+  }
+
+  // Logout from all devices
+  static Future<void> logoutAllDevices() async {
+    try {
+      print('🚪 Logging out from all devices...');
+
+      // Clear attendance data first
+      AttendanceDataManager().clearAllData();
+
+      // Call API to logout from all devices
+      await ApiService.logoutAllDevices();
+
+      // Clear local data
+      await StorageService.clearAll();
+
+      print('🚪 Successfully logged out from all devices');
+    } catch (e) {
+      print('❌ Logout all devices error: $e');
+      // Even if API call fails, clear local data
+      AttendanceDataManager().clearAllData();
+      await StorageService.clearAll();
+      throw Exception('Failed to logout from all devices: $e');
+    }
+  }
+
+  // Logout from current device only
+  static Future<void> logoutCurrentDevice() async {
+    try {
+      print('🚪 Logging out from current device...');
+
+      // Clear attendance data first
+      AttendanceDataManager().clearAllData();
+
+      // Call API to logout from current device
+      await ApiService.logoutCurrentDevice();
+
+      // Clear local data
+      await StorageService.clearAll();
+
+      print('🚪 Successfully logged out from current device');
+    } catch (e) {
+      print('❌ Logout current device error: $e');
+      // Even if API call fails, clear local data
+      AttendanceDataManager().clearAllData();
+      await StorageService.clearAll();
+      throw Exception('Failed to logout from current device: $e');
+    }
+  }
+
+  // Get device sessions
+  static Future<List<Map<String, dynamic>>> getDeviceSessions() async {
+    try {
+      print('📱 Getting device sessions...');
+      return await ApiService.getDeviceSessions();
+    } catch (e) {
+      print('❌ Get device sessions error: $e');
+      throw Exception('Failed to get device sessions: $e');
+    }
+  }
+
+  // Check if current device is logged in
+  static Future<bool> isCurrentDeviceLoggedIn() async {
+    try {
+      final token = await StorageService.getToken();
+      final deviceId = await StorageService.getDeviceId();
+      final currentDeviceId = await DeviceService.getDeviceId();
+
+      return token != null &&
+          token.isNotEmpty &&
+          deviceId != null &&
+          deviceId == currentDeviceId;
+    } catch (e) {
+      print('❌ Error checking device login status: $e');
+      return false;
+    }
   }
 
   // Get current user profile
@@ -109,29 +242,33 @@ class AuthService {
   }
 
   // Get detailed employee profile (for profile screen)
-  static Future<Employee?> getDetailedEmployeeProfile() async {
+  static Future<Employee?> getDetailedEmployeeProfile({
+    bool forceRefresh = false,
+  }) async {
     try {
       print('📱 Fetching detailed employee profile...');
 
-      // Try to get detailed profile data from storage first
-      final storedDetailedProfile =
-          await StorageService.getDetailedEmployeeProfile();
-      if (storedDetailedProfile != null) {
-        print('📱 Using stored detailed profile data');
-        return Employee.fromJson(storedDetailedProfile);
-      }
-
-      // Fetch from API if not in storage
-      print('📱 No stored detailed profile, making API call');
+      // Always fetch fresh data from API for profile screen
+      // This ensures we get the correct employee data after login
+      print('📱 Making fresh API call for detailed profile');
       final employee = await ApiService.getEmployeeProfileDetails();
 
-      // Store the detailed profile data
+      // Store the fresh detailed profile data
       await StorageService.saveDetailedEmployeeProfile(employee.toJson());
-      print('📱 Detailed profile data saved to storage');
+      print('📱 Fresh detailed profile data saved to storage');
 
       return employee;
     } catch (e) {
       print('❌ Error getting detailed employee profile: $e');
+
+      // If API fails, try to get from storage as fallback
+      final storedDetailedProfile =
+          await StorageService.getDetailedEmployeeProfile();
+      if (storedDetailedProfile != null) {
+        print('📱 API failed, using stored detailed profile data as fallback');
+        return Employee.fromJson(storedDetailedProfile);
+      }
+
       return null;
     }
   }

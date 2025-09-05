@@ -4,8 +4,34 @@ class ApiConstants {
 
   // API Endpoints
   static const String loginEndpoint = '/employee/auth/login';
-  static const String employeeProfileEndpoint = '/employee';
-  static const String employeeProfileDetailsEndpoint = '/employee/profile';
+  static const String logoutAllDevicesEndpoint =
+      '/employee/auth/logout-all-devices';
+  static const String deviceSessionsEndpoint = '/employee/auth/device-sessions';
+  static const String logoutCurrentDeviceEndpoint =
+      '/employee/auth/logout-current-device';
+
+  //employee profile credentials
+  static const String employeeProfileEndpoint = '/employee/profile';
+  static const String employeeProfileDetailsEndpoint =
+      '/employee/profile/details';
+
+  // Time Entry Endpoints - Updated to match actual backend structure
+  static const String clockInEndpoint = '/time-entry/clock-in';
+  static const String clockOutEndpoint = '/time-entry/clock-out';
+  static const String clockInConfirmEndpoint = '/time-entry/clock-in-confirm';
+  static const String clockOutConfirmEndpoint = '/time-entry/clock-out-confirm';
+
+  // Time Entry Status and Data Endpoints
+  static const String timeEntryStatusEndpoint = '/time-entry/status';
+  static const String timeEntriesEndpoint = '/time-entry/employee';
+  static const String isClockedInEndpoint = '/time-entry/is-clocked-in';
+  static const String currentlyClockedInEndpoint =
+      '/time-entry/currently-clocked-in';
+  static const String debugStatusEndpoint = '/time-entry/debug-status';
+  static const String userActionRequirementsEndpoint =
+      '/time-entry/user-action-requirements';
+  static const String dailyTimeEntriesEndpoint = '/time-entry/daily';
+  static const String dailyAnalyticsEndpoint = '/time-entry/analytics/daily';
 
   // Headers
   static const String contentTypeJson = 'application/json';
@@ -17,4 +43,6 @@ class ApiConstants {
   static const String tokenKey = 'auth_token';
   static const String employeeIdKey = 'employee_id';
   static const String userRoleKey = 'user_role';
+  static const String deviceIdKey = 'device_id';
+  static const String deviceNameKey = 'device_name';
 }
