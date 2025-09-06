@@ -67,13 +67,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   // Clear attendance data to ensure fresh data for each user
   void _clearAttendanceData() {
-    print('🧹 Clearing attendance data for fresh user session...');
     _weeklyAttendance.clear();
     _isLoadingAttendance = true;
     _error = null;
     _currentElapsedTime = Duration.zero;
     _timer?.cancel();
-    print('🧹 Attendance data cleared');
   }
 
   @override
@@ -101,11 +99,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     _dataClearSubscription = AttendanceDataManager().clearDataStream.listen((
       _,
     ) {
-      print('🧹 Received data clear event - clearing attendance data');
       _clearAttendanceData();
     });
 
     _animationController.forward();
+    _testHoursConversion(); // Test the conversion logic
     _loadAttendanceData();
     _startTimer();
     _testApiEndpoints();
@@ -128,10 +126,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       }
 
       if (employee?.employeeId != null) {
+        print('📊 Loading weekly time entries...');
         // Load real attendance data from API
         final timeEntries = await TimeEntryService.getWeeklyTimeEntries(
           employee!.employeeId!,
         );
+        print('✅ Weekly time entries loaded: ${timeEntries.length} entries');
         // Check if we got any data
         if (timeEntries.isEmpty) {
           // Try to get today's data specifically using daily endpoint
@@ -141,7 +141,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           try {
             // Try the daily endpoint
             final dailyData = await _getDailyTimeEntries(
-              employee!.employeeId!,
+              employee.employeeId!,
               todayDate,
             );
 
@@ -159,7 +159,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           // Also try the daily analytics endpoint for weekly summary
           try {
             final analyticsData = await _getDailyAnalytics(
-              employee!.employeeId!,
+              employee.employeeId!,
               todayDate,
             );
 
@@ -177,17 +177,23 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           // If still no data, try getting data for the last 7 days
           if (timeEntries.isEmpty) {
             final lastWeek = today.subtract(const Duration(days: 7));
+            print('📊 Loading last week time entries...');
             final lastWeekEntries = await TimeEntryService.getTimeEntries(
-              employee!.employeeId!,
+              employee.employeeId!,
               startDate: lastWeek.toIso8601String().split('T')[0],
               endDate: today.toIso8601String().split('T')[0],
+            );
+            print(
+              '✅ Last week time entries loaded: ${lastWeekEntries.length} entries',
             );
             timeEntries.addAll(lastWeekEntries);
           }
         }
 
+        print('🕐 Getting current clock-in status...');
         // Also get current status to show real-time clock-in info
-        await TimeEntryService.getCurrentStatus(employee!.employeeId!);
+        await TimeEntryService.getCurrentStatus(employee.employeeId!);
+        print('✅ Current status retrieved');
 
         if (mounted) {
           setState(() {
@@ -208,10 +214,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         }
       }
     } catch (e) {
-      print('❌ Error loading attendance data: $e');
-      print('❌ Error type: ${e.runtimeType}');
-      print('❌ Error details: ${e.toString()}');
-
       if (mounted) {
         setState(() {
           if (e.toString().contains('SocketException') ||
@@ -246,14 +248,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     // Process time entries from API - filter by current employee ID
     final currentEmployeeId = _employee?.employeeId;
     if (currentEmployeeId == null) {
-      print('❌ No current employee ID - cannot process time entries');
       return attendance;
     }
 
     for (var entry in timeEntries) {
       try {
-        print('📊 Processing time entry: $entry');
-
         // Filter by employee ID to ensure data isolation
         final entryEmployeeId =
             entry['employeeId'] ??
@@ -268,8 +267,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           );
           continue;
         }
-
-        print('📊 Processing entry for current employee: $currentEmployeeId');
 
         // Safely parse DateTime values with better null handling
         // Try multiple possible field names for clock in/out times
@@ -289,7 +286,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           if (entry[field] != null && entry[field].toString().isNotEmpty) {
             try {
               clockInTime = DateTime.parse(entry[field].toString());
-              print('📊 Found clock in time in field "$field": $clockInTime');
               break;
             } catch (e) {
               print('❌ Error parsing $field: ${entry[field]} - $e');
@@ -328,7 +324,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         ];
         String workLocation = 'N/A';
         for (String field in workLocationFields) {
-          if (entry[field] != null && entry[field].toString().isNotEmpty) {
+          if (entry[field] != null && entry[field].toString().isEmpty) {
             workLocation = entry[field].toString();
             print('📊 Found work location in field "$field": $workLocation');
             break;
@@ -624,7 +620,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                         ? Colors.orange
                         : isCompleted
                         ? Colors.green
-                        : Colors.grey)
+                        : const Color.fromARGB(255, 197, 142, 142))
                     .withOpacity(0.3),
             spreadRadius: 1,
             blurRadius: 15,
@@ -674,7 +670,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           : 'Not Started',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.white.withOpacity(0.9),
+                        color: const Color.fromARGB(
+                          255,
+                          27,
+                          122,
+                          41,
+                        ).withOpacity(0.9),
                       ),
                     ),
                   ],
@@ -856,6 +857,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     print('📊 Building weekly summary card...');
     print('📊 Weekly attendance data: $_weeklyAttendance');
     print('📊 Weekly attendance entries count: ${_weeklyAttendance.length}');
+    print('📊 Available days: ${_weeklyAttendance.keys.toList()}');
 
     // Calculate weekly totals for weekdays only (Monday-Friday)
     int totalWorkDays = 0;
@@ -867,6 +869,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     for (String day in weekdays) {
       final data = _weeklyAttendance[day];
+      print('📊 Processing $day: data=$data');
       if (data != null && data['clockIn'] != null) {
         totalWorkDays++;
         if (data['completed'] == true) {
@@ -875,21 +878,44 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
         // Calculate hours for this day - use backend hours data if available
         final hoursData = data['hours'];
+        print(
+          '📊 $day hours data: $hoursData (type: ${hoursData.runtimeType})',
+        );
         if (hoursData != null) {
           if (hoursData is num) {
             // Convert decimal hours to Duration
             final hours = hoursData.toDouble();
-            totalHours += Duration(
-              milliseconds: (hours * 60 * 60 * 1000).round(),
+            final h = hours.floor();
+            final m = ((hours - h) * 60).round();
+            print('📊 Converting $hours hours to ${h}h ${m}m');
+            totalHours += Duration(hours: h, minutes: m);
+            print(
+              '📊 $day: Added ${h}h ${m}m, Total so far: ${totalHours.inHours}h ${totalHours.inMinutes.remainder(60)}m',
             );
           } else if (hoursData is String) {
-            // Parse string format like "0h 44m" or "2h 30m"
+            // Parse string format like "0h 44m" or "2h 30m" or decimal hours
             final hoursStr = hoursData.toString();
             final hoursMatch = RegExp(r'(\d+)h\s*(\d+)m').firstMatch(hoursStr);
             if (hoursMatch != null) {
+              // Already in "Xh Ym" format
               final h = int.parse(hoursMatch.group(1)!);
               final m = int.parse(hoursMatch.group(2)!);
               totalHours += Duration(hours: h, minutes: m);
+              print('📊 $day: Added ${h}h ${m}m from string format');
+            } else {
+              // Try to parse as decimal hours string
+              try {
+                final hours = double.parse(hoursStr);
+                final h = hours.floor();
+                final m = ((hours - h) * 60).round();
+                print('📊 Converting string "$hoursStr" to ${h}h ${m}m');
+                totalHours += Duration(hours: h, minutes: m);
+                print(
+                  '📊 $day: Added ${h}h ${m}m, Total so far: ${totalHours.inHours}h ${totalHours.inMinutes.remainder(60)}m',
+                );
+              } catch (e) {
+                print('📊 Error parsing hours string "$hoursStr": $e');
+              }
             }
           }
         } else {
@@ -909,6 +935,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     final totalHoursString = _formatDuration(totalHours);
+    print(
+      '📊 Weekly total hours: $totalHoursString (${totalHours.inHours}h ${totalHours.inMinutes.remainder(60)}m)',
+    );
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1274,7 +1303,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   location.toLowerCase().contains('office')
                       ? 'Office 🏢'
                       : location.toLowerCase().contains('home')
-                      ? 'Work From Home 🏠'
+                      ? 'Home 🏠'
                       : location,
                   location.toLowerCase().contains('office')
                       ? Icons.business_rounded
@@ -1362,6 +1391,29 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     return '${hours}h ${minutes}m';
+  }
+
+  // Test function to verify decimal hours conversion
+  void _testHoursConversion() {
+    print('🧪 Testing hours conversion:');
+    final testHours = [
+      7.266666666666667,
+      15.95,
+      6.733333333333333,
+      7.783333333333333,
+    ];
+    for (double hours in testHours) {
+      final h = hours.floor();
+      final m = ((hours - h) * 60).round();
+      print('  $hours hours = ${h}h ${m}m');
+    }
+
+    // Test the expected conversions
+    print('🧪 Expected conversions:');
+    print('  7.266666666666667 → 7h 16m');
+    print('  15.95 → 15h 57m');
+    print('  6.733333333333333 → 6h 44m');
+    print('  7.783333333333333 → 7h 47m');
   }
 
   // Get daily time entries using the daily endpoint

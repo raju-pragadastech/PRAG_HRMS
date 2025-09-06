@@ -933,9 +933,7 @@ class _LeaveScreenState extends State<LeaveScreen>
         return;
       }
 
-      print('🚀 Auth token found: ${token.substring(0, 20)}...');
-      print('🚀 Making API call to submit leave request...');
-
+      print('📝 Submitting leave request...');
       // Make API call
       final response = await http.post(
         Uri.parse(
@@ -949,11 +947,9 @@ class _LeaveScreenState extends State<LeaveScreen>
       );
 
       print('🚀 Response Status Code: ${response.statusCode}');
-      print('🚀 Response Headers: ${response.headers}');
-      print('🚀 Response Body: ${response.body}');
+      print('✅ Leave request response: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ Leave request submitted successfully!');
         _showSnackBar('Leave request submitted successfully!', Colors.green);
 
         // Reset form
@@ -1031,12 +1027,10 @@ class _LeaveScreenState extends State<LeaveScreen>
         },
       );
 
-      print('🚀 Response Status Code: ${response.statusCode}');
-      print('🚀 Response Body: ${response.body}');
+      print('📋 Loading leave history...');
+      print('✅ Leave history response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('✅ Leave history fetched successfully!');
-
         // Parse response
         final responseData = json.decode(response.body);
         List<Map<String, dynamic>> leaveHistory = [];
@@ -1105,27 +1099,16 @@ class _LeaveScreenState extends State<LeaveScreen>
 
   // Helper methods for formatting leave data
   String _formatLeaveType(String leaveType) {
-    switch (leaveType.toUpperCase()) {
-      case 'ANNUAL_LEAVE':
-      case 'AL':
-        return 'Annual Leave';
-      case 'SICK_LEAVE':
-      case 'SI':
-        return 'Sick Leave';
-      case 'HALF_DAY':
-      case 'HD':
-        return 'Half Day';
-      case 'WORK_FROM_HOME':
-      case 'WFH':
-        return 'Work From Home';
-      case 'PERSONAL_LEAVE':
-      case 'PL':
-        return 'Personal Leave';
-      case 'EMERGENCY_LEAVE':
-      case 'EL':
-        return 'Emergency Leave';
-      default:
-        return leaveType
+    print('🔍 Formatting leave type: "$leaveType"');
+    final result = switch (leaveType.toUpperCase()) {
+      'ANNUAL_LEAVE' || 'AL' || 'Al' => 'Annual Leave',
+      'SICK_LEAVE' || 'Sl' || 'SL' => 'Sick Leave',
+      'HALF_DAY' || 'HD' || 'Hd' => 'Half Day',
+      'WORK_FROM_HOME' || 'WFH' || 'Wfh' => 'Work From Home',
+      'PERSONAL_LEAVE' || 'PL' || 'Pl' => 'Personal Leave',
+      'EMERGENCY_LEAVE' || 'EL' || 'El' => 'Emergency Leave',
+      _ =>
+        leaveType
             .replaceAll('_', ' ')
             .toLowerCase()
             .split(' ')
@@ -1134,8 +1117,10 @@ class _LeaveScreenState extends State<LeaveScreen>
                   ? word[0].toUpperCase() + word.substring(1)
                   : '',
             )
-            .join(' ');
-    }
+            .join(' '),
+    };
+    print('🔍 Formatted result: "$result"');
+    return result;
   }
 
   String _formatHalfDayType(String halfDayType) {

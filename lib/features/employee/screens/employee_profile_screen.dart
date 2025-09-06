@@ -45,8 +45,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
 
   Future<void> _loadEmployeeData() async {
     try {
-      print('📱 Loading detailed employee profile data...');
+      print('👤 Loading employee profile...');
       final employee = await AuthService.getDetailedEmployeeProfile();
+      print('✅ Employee profile loaded: ${employee?.firstName ?? 'Unknown'}');
 
       if (mounted) {
         setState(() {
@@ -578,13 +579,14 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             _buildDetailRow(
               Icons.person_rounded,
               'Manager',
-              _employee!.manager ?? 'Manager not specified',
+              _employee!.manager ?? 'Vamshi Krishna M',
               Colors.purple,
             ),
             _buildDetailRow(
               Icons.location_on_rounded,
               'Work Location',
-              _employee!.workLocation ?? 'Work location not specified',
+              _employee!.workLocation ??
+                  ' JNTU-Hitech City Road, KPHB, Hyderabad – 500072 ',
               Colors.red,
             ),
           ],
@@ -940,8 +942,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         ),
       );
 
+      print('📱 Loading device sessions...');
       // Get device sessions
       final sessions = await AuthService.getDeviceSessions();
+      print('✅ Device sessions loaded: ${sessions.length} sessions');
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);

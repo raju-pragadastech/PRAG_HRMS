@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/time_entry_service.dart';
-import '../../../core/services/api_service.dart';
 import '../../../core/models/employee.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -57,66 +56,23 @@ class _DashboardScreenState extends State<DashboardScreen>
     _loadEmployeeData();
     _checkClockInStatus();
     _loadTodayTotalHours();
-    _testApiEndpoints();
 
     // Add observer to detect when app becomes active
     WidgetsBinding.instance.addObserver(this);
   }
 
-  // Test API endpoints to discover correct structure
-  Future<void> _testApiEndpoints() async {
-    try {
-      print('🔍 Dashboard: Starting API endpoint discovery...');
-      await ApiService.testApiEndpoints();
-    } catch (e) {
-      print('❌ Dashboard: API endpoint discovery failed: $e');
-    }
-  }
-
   Future<void> _loadEmployeeData() async {
     try {
-      print('📱 Loading employee data for dashboard...');
-
-      // First check if we have stored employee ID
-      final storedEmployeeId = await AuthService.getEmployeeId();
-      print('📱 Stored Employee ID: $storedEmployeeId');
-
-      if (storedEmployeeId == null) {
-        print('❌ No stored employee ID found');
-        if (mounted) {
-          setState(() {
-            _isLoadingEmployee = false;
-          });
-        }
-        return;
-      }
-
-      // Store fallback employee ID
-      _fallbackEmployeeId = storedEmployeeId;
-
+      print('📱 Loading employee data...');
+      // Get employee data directly - AuthService handles employee ID internally
       final employee = await AuthService.getCurrentUserProfile();
-      print('📱 Employee data received: $employee');
+      print('✅ Employee data loaded: ${employee?.firstName ?? 'Unknown'}');
 
       if (mounted) {
         setState(() {
           _employee = employee;
           _isLoadingEmployee = false;
         });
-
-        if (employee != null) {
-          print('✅ Employee data loaded successfully:');
-          print('   - Employee ID: ${employee.employeeId}');
-          print('   - First Name: "${employee.firstName}"');
-          print('   - Last Name: "${employee.lastName}"');
-          print('   - Full Name: "${employee.fullName}"');
-          print('   - Email: ${employee.email}');
-          print('   - Department: ${employee.department}');
-          print('   - Position: ${employee.position}');
-          print('   - Full Name Length: ${employee.fullName.length}');
-          print('   - Full Name isEmpty: ${employee.fullName.isEmpty}');
-        } else {
-          print('❌ No employee data found');
-        }
       }
     } catch (e) {
       print('❌ Error loading employee data: $e');
@@ -130,48 +86,31 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Future<void> _checkClockInStatus() async {
     try {
-      print('🕐 Checking current clock-in status...');
-
-      // Get employee ID first
-      final employeeId = await AuthService.getEmployeeId();
+      // Use employee ID from loaded data or get it if not available
+      final employeeId =
+          _employee?.employeeId ?? await AuthService.getEmployeeId();
       if (employeeId == null) {
-        print('❌ No employee ID found for status check');
         return;
       }
 
+      print('🕐 Checking clock-in status...');
       // Get current status from API
       final status = await TimeEntryService.getCurrentStatus(employeeId);
       print(
-        '🕐 Current status: isClockedIn=${status.isClockedIn ?? false}, workLocation=${status.workLocation}, clockInTime=${status.clockInTime}',
+        '✅ Clock-in status: ${(status.isClockedIn ?? false) ? 'Clocked In' : 'Not Clocked In'}',
       );
 
       if (mounted) {
         setState(() {
           _isClockedIn = status.isClockedIn ?? false;
-          print('🕐 Dashboard: Status check - _isClockedIn = $_isClockedIn');
-          print(
-            '🕐 Dashboard: Status check - workLocation = ${status.workLocation}',
-          );
-          print(
-            '🕐 Dashboard: Status check - clockInTime = ${status.clockInTime}',
-          );
 
           if (status.isClockedIn ?? false) {
             _workLocation = status.workLocation ?? 'Unknown';
-            print(
-              '🕐 Dashboard: Status check - _workLocation = $_workLocation',
-            );
 
             if (status.clockInTime != null) {
               try {
                 _clockInTime = DateTime.parse(status.clockInTime!);
                 _elapsedTime = DateTime.now().difference(_clockInTime!);
-                print(
-                  '🕐 Dashboard: Status check - _clockInTime = $_clockInTime',
-                );
-                print(
-                  '🕐 Dashboard: Status check - _elapsedTime = ${_formatDuration(_elapsedTime)}',
-                );
 
                 // Start timer if clocked in
                 _timer?.cancel();
@@ -182,10 +121,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     });
                   }
                 });
-
-                print('✅ Dashboard: Timer started for clocked-in session');
               } catch (e) {
-                print('❌ Error parsing clock-in time: $e');
                 _clockInTime = DateTime.now();
                 _elapsedTime = Duration.zero;
               }
@@ -195,12 +131,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             _clockInTime = null;
             _elapsedTime = Duration.zero;
             _timer?.cancel();
-            print('🕐 Dashboard: Status check - Not clocked in, cleared timer');
           }
         });
       }
     } catch (e) {
-      print('❌ Error checking clock-in status: $e');
       // Silently handle the error - don't show error messages to user
     }
   }
@@ -855,18 +789,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       bool needsGps = location.toLowerCase().contains('office');
       bool useGpsLocation = needsGps;
 
+      print('🕐 Clocking in...');
       // Call API to store clock-in data with appropriate location handling
       final response = await TimeEntryService.clockIn(
         employeeId: _employee!.employeeId!,
         workLocation: location,
         useGpsLocation: useGpsLocation,
       );
-
-      print('🕐 ========== DASHBOARD CLOCK IN RESPONSE ==========');
-      print('🕐 Clock-in response: isSuccessful=${response.isSuccessful}');
-      print('🕐 Clock-in response: message=${response.message}');
-      print('🕐 Clock-in response: totalHours=${response.totalHours}');
-      print('🕐 ========== DASHBOARD CLOCK IN DEBUG END ==========');
+      print(
+        '✅ Clock-in response: ${response.isSuccessful ? 'Success' : 'Failed'}',
+      );
 
       if (response.isSuccessful) {
         // Update UI state
@@ -882,11 +814,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           _elapsedTime = DateTime.now().difference(_clockInTime!);
         });
 
-        print('✅ Dashboard: Clock-in successful, updating UI state');
-        print('✅ Dashboard: _isClockedIn = $_isClockedIn');
-        print('✅ Dashboard: _workLocation = $_workLocation');
-        print('✅ Dashboard: _clockInTime = $_clockInTime');
-
         // Start timer
         _timer?.cancel(); // Cancel any existing timer
         _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -897,8 +824,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           }
         });
 
-        print('✅ Dashboard: Timer started successfully');
-
         _showSuccessSnackBar('Successfully clocked in at $location');
 
         // Refresh attendance data after successful clock-in
@@ -907,9 +832,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         _showErrorSnackBar('Clock-in failed: ${response.message}');
       }
     } catch (e) {
-      print('❌ Dashboard clock-in error: $e');
-      print('❌ Error type: ${e.runtimeType}');
-
       // Handle specific errors
       if (e.toString().contains('already_completed') ||
           e.toString().contains('already completed your daily time entry') ||
@@ -921,7 +843,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         );
         return;
       } else if (e.toString().contains('credentials_invalid')) {
-        print('🔐 Authentication error, showing login dialog...');
         // Show dialog to confirm logout and redirect to login
         if (mounted) {
           showDialog(
@@ -1043,24 +964,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       bool needsGps = currentWorkLocation.toLowerCase().contains('office');
       bool useGpsLocation = needsGps;
 
-      if (needsGps) {
-        print('🏢 Office clock-out - using GPS location');
-      } else {
-        print('🏠 Work From Home clock-out - skipping GPS location');
-      }
-
+      print('🕐 Clocking out...');
       // Call API to store clock-out data with appropriate location handling
       final response = await TimeEntryService.clockOut(
         employeeId: _employee!.employeeId!,
         workLocation: currentWorkLocation,
         useGpsLocation: useGpsLocation,
       );
-
-      print('🕐 ========== DASHBOARD CLOCK OUT RESPONSE ==========');
-      print('🕐 Clock-out response: isSuccessful=${response.isSuccessful}');
-      print('🕐 Clock-out response: message=${response.message}');
-      print('🕐 Clock-out response: totalHours=${response.totalHours}');
-      print('🕐 ========== DASHBOARD CLOCK OUT DEBUG END ==========');
+      print(
+        '✅ Clock-out response: ${response.isSuccessful ? 'Success' : 'Failed'}',
+      );
 
       if (response.isSuccessful) {
         // Load today's total hours before updating UI
@@ -1084,9 +997,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         _showErrorSnackBar('Clock-out failed: ${response.message}');
       }
     } catch (e) {
-      print('❌ Dashboard clock-out error: $e');
-      print('❌ Error type: ${e.runtimeType}');
-
       // Restore UI state if clock-out failed
       if (mounted) {
         setState(() {
@@ -1120,9 +1030,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _loadTodayTotalHours() async {
     try {
       if (_employee?.employeeId != null) {
+        print('📊 Loading today total hours...');
         final timeEntries = await TimeEntryService.getWeeklyTimeEntries(
           _employee!.employeeId!,
         );
+        print('✅ Today total hours loaded: ${_todayTotalHours}');
         final today = DateTime.now();
         final todayEntries = timeEntries.where((entry) {
           if (entry['clockInTime'] != null) {
@@ -1144,14 +1056,11 @@ class _DashboardScreenState extends State<DashboardScreen>
           }
         }
       }
-    } catch (e) {
-      print('❌ Error loading today total hours: $e');
-    }
+    } catch (e) {}
   }
 
   // Refresh attendance data after clock-in/out
   void _refreshAttendanceData() {
-    print('📊 Refreshing attendance data after clock action...');
     // This will trigger a refresh when user navigates to attendance screen
     // The attendance screen will fetch fresh data from API
   }
