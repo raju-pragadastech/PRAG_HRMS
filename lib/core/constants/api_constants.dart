@@ -33,6 +33,11 @@ class ApiConstants {
   static const String dailyTimeEntriesEndpoint = '/time-entry/daily';
   static const String dailyAnalyticsEndpoint = '/time-entry/analytics/daily';
 
+  // Leave Management Endpoints
+  static const String leaveRequestsEndpoint = '/leave-requests';
+  static const String leaveRequestsEmployeeEndpoint =
+      '/leave-requests/employee';
+
   // Headers
   static const String contentTypeJson = 'application/json';
   static const String contentTypeMultipart = 'multipart/form-data';

@@ -403,19 +403,19 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             _buildDetailRow(
               Icons.location_on_rounded,
               'Address',
-              'Address not provided',
+              _employee!.address ?? 'Address not provided',
               Colors.orange,
             ),
             _buildDetailRow(
               Icons.cake_rounded,
               'Date of Birth',
-              'Date of birth not provided',
+              _employee!.dateOfBirth ?? 'Date of birth not provided',
               Colors.purple,
             ),
             _buildDetailRow(
               Icons.emergency_rounded,
               'Emergency Contact',
-              'Emergency contact not provided',
+              _employee!.emergencyContact ?? 'Emergency contact not provided',
               Colors.red,
             ),
           ],
@@ -468,13 +468,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             _buildDetailRow(
               Icons.work_rounded,
               'Experience',
-              'Experience not provided',
+              _employee!.experience ?? 'Experience not provided',
               Colors.blue,
             ),
             _buildDetailRow(
               Icons.school_rounded,
               'Education',
-              'Education not provided',
+              _employee!.education ?? 'Education not provided',
               Colors.green,
             ),
             const SizedBox(height: 16),
@@ -486,7 +486,9 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['Flutter', 'Dart', 'API Integration'].map((skill) {
+              children: (_employee!.skills ?? ['No skills listed']).map((
+                skill,
+              ) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -576,13 +578,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             _buildDetailRow(
               Icons.person_rounded,
               'Manager',
-              'Vamshi Krishna M',
+              _employee!.manager ?? 'Manager not specified',
               Colors.purple,
             ),
             _buildDetailRow(
               Icons.location_on_rounded,
               'Work Location',
-              'JNTU Road, Kukatpally Housing Board Colony, Kukatpally, Hyderabad',
+              _employee!.workLocation ?? 'Work location not specified',
               Colors.red,
             ),
           ],
