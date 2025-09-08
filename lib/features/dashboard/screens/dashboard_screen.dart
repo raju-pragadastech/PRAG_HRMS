@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/time_entry_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../core/services/attendance_data_manager.dart';
 import '../../../core/models/employee.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -53,12 +55,80 @@ class _DashboardScreenState extends State<DashboardScreen>
         );
 
     _animationController.forward();
+    _seedFromLocalCache();
     _loadEmployeeData();
     _checkClockInStatus();
     _loadTodayTotalHours();
 
     // Add observer to detect when app becomes active
     WidgetsBinding.instance.addObserver(this);
+
+    // Ensure no lingering SnackBars show when entering dashboard
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+    });
+  }
+
+  // Seed UI instantly from locally cached data to avoid initial delay after cold start
+  Future<void> _seedFromLocalCache() async {
+    try {
+      // Prefer runtime cache warmed by splash; fallback to secure storage
+      final cachedEmployee =
+          AttendanceDataManager().cachedEmployeeData ??
+          await StorageService.getEmployeeData();
+      if (cachedEmployee != null && mounted) {
+        setState(() {
+          _employee = Employee.fromJson(cachedEmployee);
+          _isLoadingEmployee = false;
+        });
+      }
+
+      // Seed clock-in state from runtime cache; fallback to storage
+      final cachedClockIn = AttendanceDataManager().cachedClockInData;
+      final clockInData =
+          cachedClockIn ?? await StorageService.getClockInData();
+      final clockOutData = cachedClockIn == null
+          ? await StorageService.getClockOutData()
+          : null;
+      if (clockInData != null && clockOutData == null) {
+        final clockInIso = clockInData['clockInTime']?.toString();
+        DateTime? clockIn;
+        if (clockInIso != null && clockInIso.isNotEmpty) {
+          try {
+            clockIn = DateTime.parse(clockInIso);
+          } catch (_) {
+            clockIn = DateTime.now();
+          }
+        } else {
+          clockIn = DateTime.now();
+        }
+
+        if (mounted) {
+          setState(() {
+            _isClockedIn = true;
+            _workLocation =
+                (clockInData['workLocation']?.toString().isNotEmpty ?? false)
+                ? clockInData['workLocation'].toString()
+                : 'Unknown';
+            _clockInTime = clockIn;
+            _elapsedTime = DateTime.now().difference(_clockInTime!);
+          });
+        }
+
+        // Start/resume timer immediately
+        _timer?.cancel();
+        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (mounted && _clockInTime != null) {
+            setState(() {
+              _elapsedTime = DateTime.now().difference(_clockInTime!);
+            });
+          }
+        });
+      }
+    } catch (_) {
+      // Ignore cache seed errors silently
+    }
   }
 
   Future<void> _loadEmployeeData() async {
@@ -169,7 +239,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.indigo.withOpacity(0.1), Colors.white],
+              colors: [
+                Theme.of(context).primaryColor.withOpacity(0.1),
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
             ),
           ),
           child: Column(
@@ -204,16 +277,19 @@ class _DashboardScreenState extends State<DashboardScreen>
                   children: [
                     Text(
                       'Welcome back, ${_isLoadingEmployee ? 'Loading...' : (_employee?.firstName ?? 'Employee')} 👋',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 26, // Increased from 22 to 26
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Employee ID: ${_isLoadingEmployee ? 'Loading...' : (_employee?.employeeId ?? _fallbackEmployeeId ?? 'N/A')}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ],
                 ),
@@ -289,12 +365,15 @@ class _DashboardScreenState extends State<DashboardScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.orange.shade400, Colors.orange.shade600],
+          colors: [
+            const Color.fromARGB(255, 255, 181, 69),
+            const Color.fromARGB(255, 255, 176, 79),
+          ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.3),
+            color: const Color.fromARGB(255, 240, 177, 84).withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -463,12 +542,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Quick Actions',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 16),
@@ -527,7 +606,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -566,10 +645,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   const SizedBox(height: 12),
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                 ],
@@ -590,7 +669,14 @@ class _DashboardScreenState extends State<DashboardScreen>
           margin: const EdgeInsets.symmetric(horizontal: 40),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color.fromARGB(
+                    255,
+                    30,
+                    30,
+                    30,
+                  ) // Light black for dark theme
+                : Colors.white, // White for light theme
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -604,12 +690,12 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Select Work Location',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 20),
@@ -656,7 +742,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           margin: const EdgeInsets.symmetric(horizontal: 40),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E) // Light black for dark theme
+                : Colors.white, // White for light theme
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -670,18 +758,21 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Clock Out',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 'Are you sure you want to clock out?',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
@@ -755,12 +846,50 @@ class _DashboardScreenState extends State<DashboardScreen>
       return;
     }
 
-    try {
-      // Clock in at the specified location
+    // Store original state for rollback if needed
+    final originalIsClockedIn = _isClockedIn;
+    final originalWorkLocation = _workLocation;
+    final originalClockInTime = _clockInTime;
+    final originalElapsedTime = _elapsedTime;
 
+    // IMMEDIATE UI UPDATE - Update UI state first for instant feedback
+    if (mounted) {
+      setState(() {
+        _isClockedIn = true;
+        _workLocation = location;
+        _clockInTime = DateTime.now();
+        _elapsedTime = Duration.zero;
+      });
+    }
+
+    // Start timer immediately
+    _timer?.cancel(); // Cancel any existing timer
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _elapsedTime = DateTime.now().difference(_clockInTime!);
+        });
+      }
+    });
+
+    // Show immediate success message
+    _showSuccessSnackBar('Clocking in at $location...');
+
+    try {
       // Check if user is properly authenticated
       final isAuthenticated = await AuthService.isAuthenticated();
       if (!isAuthenticated) {
+        // Rollback UI state
+        if (mounted) {
+          setState(() {
+            _isClockedIn = originalIsClockedIn;
+            _workLocation = originalWorkLocation;
+            _clockInTime = originalClockInTime;
+            _elapsedTime = originalElapsedTime;
+          });
+        }
+        _timer?.cancel();
+
         if (mounted) {
           showDialog(
             context: context,
@@ -801,37 +930,34 @@ class _DashboardScreenState extends State<DashboardScreen>
       );
 
       if (response.isSuccessful) {
-        // Update UI state
-        setState(() {
-          _isClockedIn = true;
-          _workLocation = location;
-          _clockInTime = DateTime.now();
-          _elapsedTime = Duration.zero;
-        });
-
-        // Immediately update elapsed time to show current elapsed time
-        setState(() {
-          _elapsedTime = DateTime.now().difference(_clockInTime!);
-        });
-
-        // Start timer
-        _timer?.cancel(); // Cancel any existing timer
-        _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-          if (mounted) {
-            setState(() {
-              _elapsedTime = DateTime.now().difference(_clockInTime!);
-            });
-          }
-        });
-
         _showSuccessSnackBar('Successfully clocked in at $location');
-
         // Refresh attendance data after successful clock-in
         _refreshAttendanceData();
       } else {
+        // Rollback UI state on API failure
+        if (mounted) {
+          setState(() {
+            _isClockedIn = originalIsClockedIn;
+            _workLocation = originalWorkLocation;
+            _clockInTime = originalClockInTime;
+            _elapsedTime = originalElapsedTime;
+          });
+        }
+        _timer?.cancel();
         _showErrorSnackBar('Clock-in failed: ${response.message}');
       }
     } catch (e) {
+      // Rollback UI state on any error
+      if (mounted) {
+        setState(() {
+          _isClockedIn = originalIsClockedIn;
+          _workLocation = originalWorkLocation;
+          _clockInTime = originalClockInTime;
+          _elapsedTime = originalElapsedTime;
+        });
+      }
+      _timer?.cancel();
+
       // Handle specific errors
       if (e.toString().contains('already_completed') ||
           e.toString().contains('already completed your daily time entry') ||
@@ -871,7 +997,13 @@ class _DashboardScreenState extends State<DashboardScreen>
           );
         }
         return; // Don't show snackbar if showing dialog
-      } else if (e.toString().contains('Network')) {
+      } else if (e.toString().contains('TimeoutException') ||
+          e.toString().contains('timeout')) {
+        _showErrorSnackBar(
+          'Request timeout. Please check your connection and try again.',
+        );
+      } else if (e.toString().contains('Network') ||
+          e.toString().contains('SocketException')) {
         _showErrorSnackBar('Network error. Please check your connection');
       } else {
         _showErrorSnackBar('Clock-in failed: ${e.toString()}');
@@ -884,25 +1016,33 @@ class _DashboardScreenState extends State<DashboardScreen>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E1E1E) // Light black for dark theme
+              : Colors.white, // White for light theme
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Text(
+          title: Text(
             'Clock Out',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to clock out?',
-            style: TextStyle(fontSize: 16, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(foregroundColor: Colors.grey[600]),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).textTheme.bodySmall?.color,
+              ),
               child: const Text(
                 'No',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -1011,7 +1151,13 @@ class _DashboardScreenState extends State<DashboardScreen>
         _showErrorSnackBar('You are not currently clocked in');
       } else if (e.toString().contains('credentials_invalid')) {
         _showErrorSnackBar('Authentication error. Please login again');
-      } else if (e.toString().contains('Network')) {
+      } else if (e.toString().contains('TimeoutException') ||
+          e.toString().contains('timeout')) {
+        _showErrorSnackBar(
+          'Request timeout. Please check your connection and try again.',
+        );
+      } else if (e.toString().contains('Network') ||
+          e.toString().contains('SocketException')) {
         _showErrorSnackBar('Network error. Please check your connection');
       } else {
         _showErrorSnackBar('Clock-out failed: ${e.toString()}');
@@ -1089,27 +1235,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // Show Error SnackBar
+  // Error UI disabled on dashboard per request to avoid overlay/overlap
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error, color: Colors.white),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
-      ),
-    );
+    // Intentionally no UI shown. You can log if needed:
+    // debugPrint('Dashboard error: ' + message);
   }
 }

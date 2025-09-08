@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "765490427409",
+    "project_id": "pragva-hrms",
+    "storage_bucket": "pragva-hrms.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765490427409:android:019052a32c3ea4aaf663b0",
+        "android_client_info": {
+          "package_name": "com.pragva.hrms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUxxBjTe5FOdJuf8r394E8YUuRx182MgU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

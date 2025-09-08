@@ -66,8 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
         return AppBar(
-          backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.menu_rounded),
@@ -146,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: _buildUnifiedHeader(),
       ),
       drawer: _buildDrawer(),
-      body: _screens[_currentIndex],
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: Consumer<ThemeService>(
         builder: (context, themeService, child) {
           return Container(
@@ -209,14 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               DrawerHeader(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Theme.of(context).primaryColor,
-                      Theme.of(context).primaryColor.withOpacity(0.8),
-                    ],
-                  ),
+                  color: themeService.isDarkMode
+                      ? const Color(0xFF000000) // Pure black for dark theme
+                      : Theme.of(
+                          context,
+                        ).primaryColor, // Primary color for light theme
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -231,9 +226,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 60,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.2),
+                              color: themeService.isDarkMode
+                                  ? Colors.white.withOpacity(
+                                      0.2,
+                                    ) // White for dark theme
+                                  : Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary.withOpacity(
+                                      0.2,
+                                    ), // Theme color for light theme
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
+                                color: themeService.isDarkMode
+                                    ? Colors.white.withOpacity(
+                                        0.3,
+                                      ) // White for dark theme
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary.withOpacity(
+                                        0.3,
+                                      ), // Theme color for light theme
                                 width: 2,
                               ),
                             ),
@@ -244,19 +255,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                       width: 60,
                                       height: 60,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons.person_rounded,
-                                              color: Colors.white,
-                                              size: 30,
-                                            );
-                                          },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.person_rounded,
+                                          color: themeService.isDarkMode
+                                              ? Colors
+                                                    .white // White for dark theme
+                                              : Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary, // Theme color for light theme
+                                          size: 30,
+                                        );
+                                      },
                                     ),
                                   )
-                                : const Icon(
+                                : Icon(
                                     Icons.person_rounded,
-                                    color: Colors.white,
+                                    color: themeService.isDarkMode
+                                        ? Colors
+                                              .white // White for dark theme
+                                        : Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary, // Theme color for light theme
                                     size: 30,
                                   ),
                           ),
@@ -270,7 +290,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 width: 20,
                                 height: 20,
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: themeService.isDarkMode
+                                      ? Colors
+                                            .white // White for dark theme
+                                      : Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary, // Theme color for light theme
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: Theme.of(context).primaryColor,
@@ -290,47 +315,82 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     if (_isLoadingEmployee)
-                      const SizedBox(
+                      SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            themeService.isDarkMode
+                                ? Colors
+                                      .white // White for dark theme
+                                : Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary, // Theme color for light theme
                           ),
                         ),
                       )
                     else
                       Text(
                         _employee?.fullName ?? 'Loading...',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: themeService.isDarkMode
+                              ? Colors
+                                    .white // White for dark theme
+                              : Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary, // Theme color for light theme
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                     const SizedBox(height: 2),
                     if (!_isLoadingEmployee)
                       Text(
                         _employee?.email ?? 'No email available',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: themeService.isDarkMode
+                              ? Colors.white.withOpacity(
+                                  0.9,
+                                ) // White for dark theme
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onPrimary.withOpacity(
+                                  0.9,
+                                ), // Theme color for light theme
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                     const SizedBox(height: 2),
                     if (!_isLoadingEmployee)
                       Text(
                         'Employee ID: ${_employee?.employeeId ?? 'N/A'}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: themeService.isDarkMode
+                              ? Colors.white.withOpacity(
+                                  0.8,
+                                ) // White for dark theme
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onPrimary.withOpacity(
+                                  0.8,
+                                ), // Theme color for light theme
                           fontSize: 10,
                           fontWeight: FontWeight.w400,
                         ),
                         textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                   ],
                 ),
@@ -338,6 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.dashboard_rounded,
                 title: 'Dashboard',
+                color: Colors.blue,
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _currentIndex = 1); // Switch to Dashboard tab
@@ -346,6 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.person_rounded,
                 title: 'Profile',
+                color: Colors.green,
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, AppRoutes.employeeProfile);
@@ -354,6 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.calendar_today_rounded,
                 title: 'Leave Management',
+                color: Colors.orange,
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, AppRoutes.leave);
@@ -362,6 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.access_time_rounded,
                 title: 'Attendance',
+                color: Colors.purple,
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, AppRoutes.attendance);
@@ -370,6 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.campaign_rounded,
                 title: 'Announcements',
+                color: Colors.red,
                 onTap: () {
                   Navigator.pop(context);
                   setState(
@@ -380,6 +445,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.support_agent_rounded,
                 title: 'Support',
+                color: Colors.teal,
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.pushNamed(context, AppRoutes.support);
@@ -389,6 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.palette_rounded,
                 title: 'Theme Settings',
+                color: Colors.indigo,
                 onTap: () {
                   Navigator.pop(context);
                   _showThemeSelector();
@@ -397,6 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildDrawerItem(
                 icon: Icons.logout_rounded,
                 title: 'Logout',
+                color: Colors.red,
                 onTap: () {
                   Navigator.pop(context);
                   _showLogoutDialog();
@@ -413,6 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Color? color,
   }) {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
@@ -423,18 +492,24 @@ class _HomeScreenState extends State<HomeScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                color: (color ?? Theme.of(context).primaryColor).withOpacity(
+                  0.1,
+                ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: Theme.of(context).primaryColor,
+                color: color ?? Theme.of(context).primaryColor,
                 size: 20,
               ),
             ),
             title: Text(
               title,
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
             onTap: onTap,
             shape: RoundedRectangleBorder(

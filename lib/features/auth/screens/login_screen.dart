@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -31,30 +31,31 @@ class _LoginScreenState extends State<LoginScreen> {
             end: Alignment.bottomCenter,
             colors: [
               Theme.of(context).primaryColor.withOpacity(0.1),
-              Colors.white,
+              Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 40),
-                // Header Section
+                const SizedBox(height: 16),
                 _buildHeader(),
-                const SizedBox(height: 40),
-                // Login Form
+                const SizedBox(height: 32),
                 _buildLoginForm(),
                 const SizedBox(height: 24),
-                // Login Button
                 _buildLoginButton(),
-                const SizedBox(height: 16),
-                // Forgot Password
+                const SizedBox(height: 12),
                 _buildForgotPassword(),
-                const SizedBox(height: 17),
-                // Footer
+                const SizedBox(height: 12),
                 _buildFooter(),
               ],
             ),
@@ -68,44 +69,47 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.85),
-              ],
-            ),
+            color: Colors.white,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).primaryColor.withOpacity(0.25),
+                color: Colors.black.withOpacity(0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.business_rounded,
-            size: 42,
-            color: Colors.white,
+          child: Image.asset(
+            'assets/Prag_LOGO.png',
+            width: 72,
+            height: 72,
+            fit: BoxFit.contain,
+            // Prevent crashes if the asset is temporarily missing
+            errorBuilder: (context, error, stackTrace) => Icon(
+              Icons.business_rounded,
+              size: 42,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Welcome Back',
           style: TextStyle(
             fontSize: 30,
             fontWeight: FontWeight.w700,
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           'Login to your PragadasTech account',
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 16,
+            color: Theme.of(context).textTheme.bodySmall?.color,
+          ),
         ),
       ],
     );
@@ -118,25 +122,21 @@ class _LoginScreenState extends State<LoginScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white,
-              Theme.of(context).primaryColor.withOpacity(0.05),
-            ],
-          ),
-          border: Border.all(color: Colors.grey.withOpacity(0.08)),
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          color: Theme.of(context).cardColor,
         ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Login Details',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
               const SizedBox(height: 16),
               // Email/Employee ID Field
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderSide: BorderSide(
                       color: _emailError != null
                           ? Colors.red
-                          : Colors.grey.shade300,
+                          : Theme.of(context).dividerColor,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Colors.red, width: 2),
@@ -251,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: Theme.of(context).cardColor,
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: Colors.red, width: 2),
@@ -302,19 +302,23 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: _isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).primaryColor,
-          foregroundColor: Colors.white,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          minimumSize: const Size(0, 36),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 height: 24,
                 width: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               )
             : const Row(
@@ -419,19 +423,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Check if login was successful
       if (response.success == true && response.token != null) {
-        // Show success message
+        // Clear any snackbars and navigate to home screen
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-
-        // Navigate to home screen
-        if (mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
           Navigator.of(context).pushReplacementNamed(AppRoutes.home);
         }
       } else {

@@ -6,18 +6,16 @@ class AnnouncementsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Announcements'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Announcements'), elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.indigo.withOpacity(0.1), Colors.white],
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.1),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
         ),
         child: ListView(
@@ -58,15 +56,6 @@ class AnnouncementsScreen extends StatelessWidget {
               priority: 'Low',
               icon: Icons.event,
               color: Colors.blue,
-            ),
-            _AnnouncementCard(
-              title: 'Policy Update',
-              description:
-                  'Updated remote work policy is now available in the employee handbook. Please review the changes.',
-              date: 'Dec 12, 2024',
-              priority: 'Medium',
-              icon: Icons.policy,
-              color: Colors.purple,
             ),
           ],
         ),
@@ -110,7 +99,7 @@ class _AnnouncementCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
@@ -151,10 +140,12 @@ class _AnnouncementCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -162,7 +153,9 @@ class _AnnouncementCard extends StatelessWidget {
                             date,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.color,
                             ),
                           ),
                         ],
@@ -264,10 +257,10 @@ class _AnnouncementCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -275,7 +268,7 @@ class _AnnouncementCard extends StatelessWidget {
                           date,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
@@ -308,10 +301,10 @@ class _AnnouncementCard extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 'Details',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               const SizedBox(height: 12),

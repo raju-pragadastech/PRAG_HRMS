@@ -6,6 +6,7 @@ import '../../../core/services/auth_service.dart';
 import '../../../core/services/time_entry_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/attendance_data_manager.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/models/employee.dart';
 // Location service import removed - not needed in attendance screen
 import '../../../core/constants/api_constants.dart';
@@ -36,7 +37,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   // Removed clock-in/clock-out state - not needed in attendance screen
 
   // HTTP client for direct API calls
-  final http.Client httpClient = http.Client();
+  final http.Client httpClient = ApiService.httpClient;
 
   // Stream subscription for data clearing events
   StreamSubscription<void>? _dataClearSubscription;
@@ -192,18 +193,66 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
         print('🕐 Getting current clock-in status...');
         // Also get current status to show real-time clock-in info
-        await TimeEntryService.getCurrentStatus(employee.employeeId!);
+        final status = await TimeEntryService.getCurrentStatus(
+          employee.employeeId!,
+        );
         print('✅ Current status retrieved');
+
+        // Process entries first
+        Map<String, Map<String, dynamic>> processed = _processTimeEntries(
+          timeEntries,
+        );
+
+        // If currently clocked in but today's entry is missing or incomplete, seed it
+        try {
+          if ((status.isClockedIn ?? false)) {
+            final now = DateTime.now();
+            final todayKey = _getDayName(now.weekday);
+            DateTime? statusClockIn;
+            if (status.clockInTime != null &&
+                status.clockInTime.toString().isNotEmpty) {
+              try {
+                statusClockIn = DateTime.parse(status.clockInTime.toString());
+              } catch (_) {
+                statusClockIn = now;
+              }
+            } else {
+              statusClockIn = now;
+            }
+
+            final workLocation =
+                (status.workLocation?.toString().isNotEmpty ?? false)
+                ? status.workLocation.toString()
+                : 'N/A';
+
+            final existing = processed[todayKey];
+            if (existing == null || existing['clockOut'] != null) {
+              processed[todayKey] = {
+                'clockIn': existing != null && existing['clockIn'] != null
+                    ? existing['clockIn'] as DateTime
+                    : statusClockIn,
+                'clockOut': null,
+                'hours': existing != null ? existing['hours'] : '0h 0m',
+                'completed': false,
+                'status': 'Currently Working',
+                'location': workLocation,
+                'employeeId': employee.employeeId!,
+              };
+            }
+          }
+        } catch (_) {
+          // Ignore status merge errors
+        }
 
         if (mounted) {
           setState(() {
             _isLoadingAttendance = false;
-            _weeklyAttendance = _processTimeEntries(timeEntries);
-            // Clock-in status logic removed - not needed in attendance screen
-
-            // Data processed successfully
+            _weeklyAttendance = processed;
           });
         }
+
+        // Ensure timer is running if currently working
+        _startTimer();
       } else {
         // No employee ID - show empty state
         if (mounted) {
@@ -324,7 +373,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         ];
         String workLocation = 'N/A';
         for (String field in workLocationFields) {
-          if (entry[field] != null && entry[field].toString().isEmpty) {
+          if (entry[field] != null && entry[field].toString().isNotEmpty) {
             workLocation = entry[field].toString();
             print('📊 Found work location in field "$field": $workLocation');
             break;
@@ -493,7 +542,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Attendance'),
-        backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -517,7 +565,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.indigo.shade50, Colors.white],
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
         ),
         child: _isLoadingAttendance
@@ -603,25 +654,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isWorking
-              ? [Colors.orange.shade400, Colors.orange.shade600]
-              : isCompleted
-              ? [Colors.green.shade400, Colors.green.shade600]
-              : [Colors.grey.shade400, Colors.grey.shade600],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).cardColor,
+        borderRadius: const BorderRadius.all(Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color:
-                (isWorking
-                        ? Colors.orange
-                        : isCompleted
-                        ? Colors.green
-                        : const Color.fromARGB(255, 197, 142, 142))
-                    .withOpacity(0.3),
+            color: Colors.black.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 15,
             offset: const Offset(0, 8),
@@ -635,7 +672,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -644,7 +681,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       : isCompleted
                       ? Icons.check_circle_rounded
                       : Icons.schedule_rounded,
-                  color: Colors.white,
+                  color: Theme.of(context).primaryColor,
                   size: 28,
                 ),
               ),
@@ -655,10 +692,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   children: [
                     Text(
                       _currentDay,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -670,12 +707,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                           : 'Not Started',
                       style: TextStyle(
                         fontSize: 16,
-                        color: const Color.fromARGB(
-                          255,
-                          27,
-                          122,
-                          41,
-                        ).withOpacity(0.9),
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                       ),
                     ),
                   ],
@@ -695,14 +727,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 Container(
                   width: 1,
                   height: 40,
-                  color: Colors.white.withOpacity(0.3),
+                  color: Theme.of(context).dividerColor,
                 ),
                 _buildStatusInfo('Hours', _getCurrentHours()),
                 if (todayData['clockOut'] != null) ...[
                   Container(
                     width: 1,
                     height: 40,
-                    color: Colors.white.withOpacity(0.3),
+                    color: Theme.of(context).dividerColor,
                   ),
                   _buildStatusInfo(
                     'Clock Out',
@@ -735,7 +767,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             if (label == 'Hours' && isCurrentlyWorking) ...[
@@ -767,7 +799,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
             fontWeight: FontWeight.bold,
             color: isCurrentlyWorking && label == 'Hours'
                 ? Colors.green
-                : Colors.white,
+                : Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
       ],
@@ -805,7 +837,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -830,12 +862,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 child: Icon(Icons.today_rounded, color: Colors.blue, size: 20),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Daily Summary',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -942,7 +974,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -971,12 +1003,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Weekly Summary',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ],
@@ -987,7 +1019,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
@@ -1009,12 +1041,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
           // Daily Breakdown
           if (_weeklyAttendance.isNotEmpty) ...[
-            const Text(
+            Text(
               'Daily Breakdown',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             const SizedBox(height: 12),
@@ -1119,7 +1151,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               const SizedBox(width: 12),
               Text(
                 label,
-                style: const TextStyle(fontSize: 14, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
               ),
             ],
           ),
@@ -1151,7 +1186,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isToday ? Colors.blue.withOpacity(0.1) : Colors.grey.shade50,
+        color: isToday
+            ? Colors.blue.withOpacity(0.1)
+            : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
         border: isToday ? Border.all(color: Colors.blue.shade200) : null,
       ),
@@ -1167,7 +1204,9 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                    color: isToday ? Colors.blue : Colors.black87,
+                    color: isToday
+                        ? Colors.blue
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 if (isToday) ...[
@@ -1181,9 +1220,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Today',
-                      style: TextStyle(color: Colors.white, fontSize: 10),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
                 ],

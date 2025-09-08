@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/storage_service.dart';
@@ -6,12 +7,21 @@ import 'core/services/theme_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/api_service.dart';
 
-void main() {
-  runApp(const HrmsApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  // Preload theme before first frame to avoid light→dark flash
+  final themeService = ThemeService();
+  await themeService.initializeTheme();
+
+  runApp(HrmsApp(themeService: themeService));
 }
 
 class HrmsApp extends StatefulWidget {
-  const HrmsApp({super.key});
+  final ThemeService themeService;
+
+  const HrmsApp({super.key, required this.themeService});
 
   @override
   State<HrmsApp> createState() => _HrmsAppState();
@@ -24,9 +34,13 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _themeService = ThemeService();
+    _themeService = widget.themeService;
     AuthService.setThemeService(_themeService);
-    _initializeTheme();
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    // Theme is already initialized before runApp
     _initializeApiService();
   }
 
@@ -35,12 +49,7 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
     ApiService.initializeClient();
   }
 
-  Future<void> _initializeTheme() async {
-    await _themeService.initializeTheme();
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // Theme already initialized
 
   @override
   void dispose() {
@@ -70,9 +79,7 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
             title: 'HRMS',
             debugShowCheckedModeBanner: false,
             theme: themeService.getThemeData(context),
-            themeMode: themeService.isAuthenticated
-                ? themeService.themeMode
-                : ThemeMode.light,
+            themeMode: themeService.themeMode,
             initialRoute: AppRoutes.splash,
             routes: AppRoutes.routes,
           );

@@ -78,18 +78,16 @@ class _LeaveScreenState extends State<LeaveScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Leave Management'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Leave Management'), elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.indigo.shade50, Colors.white],
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
         ),
         child: Column(
@@ -100,11 +98,11 @@ class _LeaveScreenState extends State<LeaveScreen>
               child: Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
+                      color: Colors.black.withOpacity(0.1),
                       spreadRadius: 1,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
@@ -205,7 +203,7 @@ class _LeaveScreenState extends State<LeaveScreen>
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -234,12 +232,12 @@ class _LeaveScreenState extends State<LeaveScreen>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
+                    Text(
                       'New Leave Request',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                   ],
@@ -256,7 +254,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: Theme.of(context).cardColor,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -295,7 +293,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
-                        fillColor: Colors.grey.shade50,
+                        fillColor: Theme.of(context).cardColor,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 8,
@@ -429,7 +427,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: Theme.of(context).cardColor,
                       contentPadding: const EdgeInsets.all(12),
                     ),
                     maxLines: 3,
@@ -553,10 +551,10 @@ class _LeaveScreenState extends State<LeaveScreen>
                   Expanded(
                     child: Text(
                       leaveTypeDisplay,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                   ),
@@ -728,10 +726,10 @@ class _LeaveScreenState extends State<LeaveScreen>
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
         const SizedBox(height: 6),

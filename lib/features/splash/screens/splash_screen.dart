@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/theme_service.dart';
+import '../../../core/services/attendance_data_manager.dart';
+import '../../../core/services/storage_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,12 +48,31 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
       await _checkAuthenticationAndNavigate();
     });
+
+    // Prefetch lightweight user and clock-in data during splash to warm runtime cache
+    _prefetchAndWarmCache();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _prefetchAndWarmCache() async {
+    try {
+      final employeeData = await StorageService.getEmployeeData();
+      AttendanceDataManager().setCachedEmployeeData(employeeData);
+
+      final clockInData = await StorageService.getClockInData();
+      final clockOutData = await StorageService.getClockOutData();
+      // Only cache running session
+      AttendanceDataManager().setCachedClockInData(
+        clockOutData == null ? clockInData : null,
+      );
+    } catch (_) {
+      // ignore prefetch errors
+    }
   }
 
   // Check authentication and navigate accordingly
@@ -84,20 +105,28 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
+        // Use both theme service and context theme for reliable detection
+        final isDark =
+            themeService.isDarkMode ||
+            Theme.of(context).brightness == Brightness.dark;
+
         return Scaffold(
+          backgroundColor: isDark ? Colors.black : null,
           body: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.8),
-                  Theme.of(context).scaffoldBackgroundColor,
-                ],
-                stops: const [0.0, 0.6, 1.0],
-              ),
-            ),
+            decoration: isDark
+                ? const BoxDecoration(color: Colors.black)
+                : BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
+                  ),
             child: Center(
               child: AnimatedBuilder(
                 animation: _animationController,
@@ -110,40 +139,50 @@ class _SplashScreenState extends State<SplashScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.1)
+                                      : Colors.black.withOpacity(0.1),
                                   blurRadius: 20,
                                   offset: const Offset(0, 10),
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              Icons.business_rounded,
-                              size: 64,
-                              color: Theme.of(context).primaryColor,
+                            child: Image.asset(
+                              'assets/Prag_LOGO.png',
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.contain,
+                              // Prevent crashes if the asset is temporarily missing
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                    Icons.business_rounded,
+                                    size: 64,
+                                    color: Color.fromARGB(255, 199, 199, 216),
+                                  ),
                             ),
                           ),
                           const SizedBox(height: 32),
-                          const Text(
+                          Text(
                             'PragadasTech',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: isDark ? Colors.white : Colors.white,
                               letterSpacing: 1.2,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Human Resource Management System',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: isDark ? Colors.white70 : Colors.white70,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -154,7 +193,9 @@ class _SplashScreenState extends State<SplashScreen>
                             child: CircularProgressIndicator(
                               strokeWidth: 3,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white.withOpacity(0.8),
+                                isDark
+                                    ? Colors.white.withOpacity(0.8)
+                                    : Colors.white.withOpacity(0.8),
                               ),
                             ),
                           ),

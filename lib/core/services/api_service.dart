@@ -54,7 +54,8 @@ class ApiService {
 
   static http.Client get httpClient {
     if (_client == null) {
-      _client = http.Client();
+      // Ensure the client is initialized with platform-specific settings
+      initializeClient();
     }
     return _client!;
   }
@@ -587,7 +588,7 @@ class ApiService {
 
       final response = await httpClient
           .post(Uri.parse(url), headers: headers, body: body)
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 10));
 
       print('🕐 ========== CLOCK IN RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');
@@ -620,7 +621,7 @@ class ApiService {
 
       final response = await httpClient
           .post(Uri.parse(url), headers: headers, body: body)
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 10));
 
       print('🕐 ========== CLOCK OUT RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');

@@ -91,8 +91,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           if (_employee != null)
@@ -108,7 +106,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.indigo.withOpacity(0.1), Colors.white],
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.1),
+              Theme.of(context).scaffoldBackgroundColor,
+            ],
           ),
         ),
         child: _buildBody(),
@@ -196,7 +197,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   Widget _buildProfileHeader() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -218,12 +219,12 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.indigo.withOpacity(0.3),
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
                     width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.indigo.withOpacity(0.2),
+                      color: Theme.of(context).primaryColor.withOpacity(0.2),
                       spreadRadius: 1,
                       blurRadius: 8,
                       offset: const Offset(0, 3),
@@ -234,11 +235,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundColor: Colors.indigo.withOpacity(0.1),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).primaryColor.withOpacity(0.1),
                       child: Icon(
                         Icons.person_rounded,
                         size: 40,
-                        color: Colors.indigo.shade600,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
                     // Upload Icon Overlay
@@ -247,7 +250,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                       right: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.indigo,
+                          color: Theme.of(context).primaryColor,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
@@ -271,10 +274,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   // Employee Name
                   Text(
                     _employee!.fullName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -288,7 +291,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                           _employee!.position ?? 'Position not specified',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -305,7 +308,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                         'ID: ${_employee!.employeeId ?? 'N/A'}',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).textTheme.bodySmall?.color,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -351,7 +354,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   Widget _buildPersonalDetails() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -382,9 +385,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Personal Details',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ],
             ),
@@ -428,7 +435,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   Widget _buildSkillsSection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -520,7 +527,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   Widget _buildJobDetails() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -551,9 +558,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Job Details',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ],
             ),
@@ -622,17 +633,17 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ],
@@ -730,7 +741,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   Widget _buildSecuritySection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -761,9 +772,13 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Security & Privacy',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
                 ),
               ],
             ),
@@ -826,10 +841,10 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -837,7 +852,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).textTheme.bodySmall?.color,
                       fontWeight: FontWeight.w400,
                     ),
                   ),

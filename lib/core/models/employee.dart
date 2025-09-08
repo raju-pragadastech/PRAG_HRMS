@@ -70,22 +70,32 @@ class Employee {
       status: json['status'] ?? json['employeeStatus'],
       address: json['address'] ?? json['homeAddress'] ?? json['location'],
       dateOfBirth: json['dateOfBirth'] ?? json['birthDate'] ?? json['dob'],
-      emergencyContact: json['emergencyContact'] ?? json['emergencyPhone'] ?? json['emergencyNumber'],
-      manager: json['manager'] ?? json['reportingManager'] ?? json['supervisor'],
-      workLocation: json['workLocation'] ?? json['officeLocation'] ?? json['location'],
-      experience: json['experience'] ?? json['workExperience'] ?? json['yearsOfExperience'],
+      emergencyContact:
+          json['emergencyContact'] ??
+          json['emergencyPhone'] ??
+          json['emergencyNumber'],
+      manager:
+          json['manager'] ?? json['reportingManager'] ?? json['supervisor'],
+      workLocation:
+          json['workLocation'] ?? json['officeLocation'] ?? json['location'],
+      experience:
+          json['experience'] ??
+          json['workExperience'] ??
+          json['yearsOfExperience'],
       education: json['education'] ?? json['qualification'] ?? json['degree'],
-      skills: json['skills'] != null 
-          ? (json['skills'] is List 
-              ? (json['skills'] as List).map((e) => e.toString()).toList()
-              : [json['skills'].toString()])
+      skills: json['skills'] != null
+          ? (json['skills'] is List
+                ? (json['skills'] as List).map((e) => e.toString()).toList()
+                : [json['skills'].toString()])
           : null,
     );
 
     print(
       '📥 Created Employee: firstName="${employee.firstName}", lastName="${employee.lastName}", fullName="${employee.fullName}"',
     );
-    print('📥 Additional fields: address="${employee.address}", manager="${employee.manager}", workLocation="${employee.workLocation}"');
+    print(
+      '📥 Additional fields: address="${employee.address}", manager="${employee.manager}", workLocation="${employee.workLocation}"',
+    );
     return employee;
   }
 
