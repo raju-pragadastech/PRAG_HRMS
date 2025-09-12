@@ -58,6 +58,9 @@ dependencies:
   # State management
   provider: ^6.1.1
   firebase_core: ^4.1.0
+  
+  # Internet connectivity monitoring
+  connectivity_plus: ^6.0.5
 
 dev_dependencies:
   flutter_test:

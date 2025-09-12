@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/time_entry_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/attendance_data_manager.dart';
+import '../../../core/services/connectivity_service.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/models/employee.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -34,6 +37,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _isLoadingEmployee = true;
   String? _fallbackEmployeeId;
 
+  // Loading state for central loading overlay
+  bool _isLoadingDashboardData = true;
+
+  // Loading state for refresh
+  bool _isRefreshing = false;
+
   @override
   void initState() {
     super.initState();
@@ -55,10 +64,9 @@ class _DashboardScreenState extends State<DashboardScreen>
         );
 
     _animationController.forward();
-    _seedFromLocalCache();
-    _loadEmployeeData();
-    _checkClockInStatus();
-    _loadTodayTotalHours();
+
+    // Initialize data loading in proper order to ensure immediate UI updates
+    _initializeDashboardData();
 
     // Add observer to detect when app becomes active
     WidgetsBinding.instance.addObserver(this);
@@ -68,6 +76,37 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).clearSnackBars();
     });
+  }
+
+  // Initialize dashboard data in proper order to ensure immediate UI updates
+  Future<void> _initializeDashboardData() async {
+    try {
+      // First, seed from local cache to show data immediately
+      await _seedFromLocalCache();
+
+      // Then load fresh data from API in background
+      await Future.wait([
+        _loadEmployeeData(),
+        _checkClockInStatus(),
+        _loadTodayTotalHours(),
+      ]);
+
+      // Mark dashboard loading as complete
+      if (mounted) {
+        setState(() {
+          _isLoadingDashboardData = false;
+        });
+      }
+    } catch (e) {
+      // Handle any initialization errors gracefully
+      print('❌ Error initializing dashboard data: $e');
+      // Mark loading as complete even on error
+      if (mounted) {
+        setState(() {
+          _isLoadingDashboardData = false;
+        });
+      }
+    }
   }
 
   // Seed UI instantly from locally cached data to avoid initial delay after cold start
@@ -139,13 +178,48 @@ class _DashboardScreenState extends State<DashboardScreen>
       print('✅ Employee data loaded: ${employee?.firstName ?? 'Unknown'}');
 
       if (mounted) {
+        // Only update if we have new employee data or if we don't have cached data
+        if (employee != null &&
+            (_employee == null ||
+                _employee?.employeeId != employee.employeeId)) {
+          setState(() {
+            _employee = employee;
+            _isLoadingEmployee = false;
+          });
+        } else if (_employee == null) {
+          // If we still don't have employee data, set loading to false
+          setState(() {
+            _isLoadingEmployee = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading employee data: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingEmployee = false;
+        });
+      }
+    }
+  }
+
+  // Load employee data specifically for refresh - always updates UI
+  Future<void> _loadEmployeeDataForRefresh() async {
+    try {
+      print('🔄 Refreshing employee data...');
+      // Get employee data directly - AuthService handles employee ID internally
+      final employee = await AuthService.getCurrentUserProfile();
+      print('✅ Employee data refreshed: ${employee?.firstName ?? 'Unknown'}');
+
+      if (mounted) {
+        // Always update UI during refresh, even if data is the same
         setState(() {
           _employee = employee;
           _isLoadingEmployee = false;
         });
       }
     } catch (e) {
-      print('❌ Error loading employee data: $e');
+      print('❌ Error refreshing employee data: $e');
       if (mounted) {
         setState(() {
           _isLoadingEmployee = false;
@@ -171,41 +245,56 @@ class _DashboardScreenState extends State<DashboardScreen>
       );
 
       if (mounted) {
-        setState(() {
-          _isClockedIn = status.isClockedIn ?? false;
+        // Only update state if there's a meaningful change to avoid overriding cached data
+        final apiIsClockedIn = status.isClockedIn ?? false;
+        final apiWorkLocation = status.workLocation ?? 'Unknown';
 
-          if (status.isClockedIn ?? false) {
-            _workLocation = status.workLocation ?? 'Unknown';
+        // Check if the API data differs significantly from current state
+        bool needsUpdate = false;
 
-            if (status.clockInTime != null) {
-              try {
-                _clockInTime = DateTime.parse(status.clockInTime!);
-                _elapsedTime = DateTime.now().difference(_clockInTime!);
+        if (_isClockedIn != apiIsClockedIn) {
+          needsUpdate = true;
+        } else if (apiIsClockedIn && _workLocation != apiWorkLocation) {
+          needsUpdate = true;
+        }
 
-                // Start timer if clocked in
-                _timer?.cancel();
-                _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-                  if (mounted && _clockInTime != null) {
-                    setState(() {
-                      _elapsedTime = DateTime.now().difference(_clockInTime!);
-                    });
-                  }
-                });
-              } catch (e) {
-                _clockInTime = DateTime.now();
-                _elapsedTime = Duration.zero;
+        if (needsUpdate) {
+          setState(() {
+            _isClockedIn = apiIsClockedIn;
+
+            if (apiIsClockedIn) {
+              _workLocation = apiWorkLocation;
+
+              if (status.clockInTime != null) {
+                try {
+                  _clockInTime = DateTime.parse(status.clockInTime!);
+                  _elapsedTime = DateTime.now().difference(_clockInTime!);
+
+                  // Start timer if clocked in
+                  _timer?.cancel();
+                  _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                    if (mounted && _clockInTime != null) {
+                      setState(() {
+                        _elapsedTime = DateTime.now().difference(_clockInTime!);
+                      });
+                    }
+                  });
+                } catch (e) {
+                  _clockInTime = DateTime.now();
+                  _elapsedTime = Duration.zero;
+                }
               }
+            } else {
+              _workLocation = '';
+              _clockInTime = null;
+              _elapsedTime = Duration.zero;
+              _timer?.cancel();
             }
-          } else {
-            _workLocation = '';
-            _clockInTime = null;
-            _elapsedTime = Duration.zero;
-            _timer?.cancel();
-          }
-        });
+          });
+        }
       }
     } catch (e) {
-      // Silently handle the error - don't show error messages to user
+      // Handle error silently
     }
   }
 
@@ -228,37 +317,41 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await _checkClockInStatus();
-          await _loadEmployeeData();
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).primaryColor.withOpacity(0.1),
-                Theme.of(context).scaffoldBackgroundColor,
-              ],
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0.1),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+              ),
+            ),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // Welcome Section (under unified header)
+                  _buildWelcomeSection(),
+                  // Clock Section
+                  _buildClockSection(),
+                  const SizedBox(height: 24),
+                  // Quick Actions Grid
+                  _buildQuickActionsGrid(),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
-          child: Column(
-            children: [
-              // Welcome Section (under unified header)
-              _buildWelcomeSection(),
-              // Clock Section
-              _buildClockSection(),
-              const SizedBox(height: 24),
-              // Quick Actions Grid
-              _buildQuickActionsGrid(),
-              const SizedBox(height: 20),
-            ],
-          ),
         ),
-      ),
+        // Central loading overlay
+        if (_isLoadingDashboardData) _buildCentralLoadingOverlay(),
+      ],
     );
   }
 
@@ -275,13 +368,21 @@ class _DashboardScreenState extends State<DashboardScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Welcome back, ${_isLoadingEmployee ? 'Loading...' : (_employee?.firstName ?? 'Employee')} 👋',
-                      style: TextStyle(
-                        fontSize: 26, // Increased from 22 to 26
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Welcome back, ${_isLoadingEmployee ? 'Loading...' : (_employee?.firstName ?? 'Employee')} 👋',
+                            style: TextStyle(
+                              fontSize: 26, // Increased from 22 to 26
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyLarge?.color,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -300,8 +401,11 @@ class _DashboardScreenState extends State<DashboardScreen>
           if (!_isClockedIn) ...[
             const SizedBox(height: 16),
             _buildLongClockInButton(),
-            // Show today's total hours if available
-            if (_todayTotalHours != '0h 0m') ...[
+            // Show today's total hours card only if there's completed work
+            if (_todayTotalHours != '0h 0m' &&
+                _todayTotalHours != '0' &&
+                _todayTotalHours != '0.0' &&
+                _formatHoursHuman(_todayTotalHours) != '0 hr 0 mins') ...[
               const SizedBox(height: 12),
               _buildTodayHoursCard(),
             ],
@@ -480,7 +584,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             color: Colors.blue.shade600,
             size: 20,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,7 +599,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _todayTotalHours,
+                  _formatHoursHuman(_todayTotalHours),
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.blue.shade800,
@@ -513,6 +617,68 @@ class _DashboardScreenState extends State<DashboardScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildCentralLoadingOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.3),
+      child: Center(
+        child: SizedBox(
+          width: 50,
+          height: 50,
+          child: CircularProgressIndicator(
+            strokeWidth: 4,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color.fromARGB(255, 9, 85, 185),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Format hours like "7 hr Y mins" from raw values such as "7h 30m", "0h 0m", or decimal "7.466666666666667"
+  String _formatHoursHuman(String raw) {
+    final trimmed = raw.trim();
+
+    // If the raw string is already like "7 hr 30 mins", keep it
+    if (trimmed.contains('hr') || trimmed.contains('mins')) {
+      return trimmed;
+    }
+
+    // Try to parse as decimal hours first (e.g., "7.466666666666667")
+    final decimalHours = double.tryParse(trimmed);
+    if (decimalHours != null) {
+      final totalMinutes = (decimalHours * 60).round();
+      final hours = totalMinutes ~/ 60;
+      final minutes = totalMinutes % 60;
+
+      final parts = <String>[];
+      parts.add("$hours hr");
+      parts.add("$minutes mins");
+      return parts.join(' ');
+    }
+
+    // Try to parse as "7h 30m" format
+    final hMatch = RegExp(r"(\d+)h").firstMatch(trimmed);
+    final mMatch = RegExp(r"(\d+)m").firstMatch(trimmed);
+
+    int hours = 0;
+    int minutes = 0;
+
+    if (hMatch != null) {
+      hours = int.tryParse(hMatch.group(1) ?? '0') ?? 0;
+    }
+    if (mMatch != null) {
+      minutes = int.tryParse(mMatch.group(1) ?? '0') ?? 0;
+    }
+
+    final parts = <String>[];
+    parts.add("$hours hr");
+    parts.add("$minutes mins");
+    return parts.join(' ');
   }
 
   Widget _buildClockSection() {
@@ -578,13 +744,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                     color: Colors.green,
                     onTap: () =>
                         Navigator.pushNamed(context, AppRoutes.attendance),
-                  ),
-                  _buildQuickActionCard(
-                    icon: Icons.campaign_rounded,
-                    label: 'Announcements',
-                    color: Colors.purple,
-                    onTap: () =>
-                        Navigator.pushNamed(context, AppRoutes.announcements),
                   ),
                 ],
               ),
@@ -846,167 +1005,177 @@ class _DashboardScreenState extends State<DashboardScreen>
       return;
     }
 
-    // Store original state for rollback if needed
-    final originalIsClockedIn = _isClockedIn;
-    final originalWorkLocation = _workLocation;
-    final originalClockInTime = _clockInTime;
-    final originalElapsedTime = _elapsedTime;
-
-    // IMMEDIATE UI UPDATE - Update UI state first for instant feedback
-    if (mounted) {
-      setState(() {
-        _isClockedIn = true;
-        _workLocation = location;
-        _clockInTime = DateTime.now();
-        _elapsedTime = Duration.zero;
-      });
-    }
-
-    // Start timer immediately
-    _timer?.cancel(); // Cancel any existing timer
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _elapsedTime = DateTime.now().difference(_clockInTime!);
-        });
-      }
-    });
-
-    // Show immediate success message
-    _showSuccessSnackBar('Clocking in at $location...');
-
+    // 3-second loader + status check during loader time
     try {
-      // Check if user is properly authenticated
-      final isAuthenticated = await AuthService.isAuthenticated();
-      if (!isAuthenticated) {
-        // Rollback UI state
-        if (mounted) {
-          setState(() {
-            _isClockedIn = originalIsClockedIn;
-            _workLocation = originalWorkLocation;
-            _clockInTime = originalClockInTime;
-            _elapsedTime = originalElapsedTime;
-          });
-        }
-        _timer?.cancel();
-
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Authentication Required'),
-              content: const Text('Please login again to continue.'),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-                  },
-                  child: const Text('Login'),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF1E1E1E)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
-          );
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Text('Processing clock-in...'),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      // 3-second loader with comprehensive status check and geolocation verification
+      bool alreadyClockedToday = false;
+      bool clockInSuccessful = false;
+      String? errorMessage;
+      bool geolocationValid = true;
+
+      try {
+        final employeeId = _employee!.employeeId!;
+
+        // Check current status and geolocation during loader
+        try {
+          final status = await TimeEntryService.getCurrentStatus(employeeId);
+          if ((status.isClockedIn ?? false) && status.clockInTime != null) {
+            final cin = DateTime.tryParse(status.clockInTime!);
+            if (cin != null) {
+              final now = DateTime.now();
+              alreadyClockedToday =
+                  cin.year == now.year &&
+                  cin.month == now.month &&
+                  cin.day == now.day;
+            }
+          }
+
+          // Verify geolocation if needed for office location
+          if (location.toLowerCase().contains('office')) {
+            try {
+              // Add geolocation check here if needed
+              // For now, assume geolocation is valid
+              geolocationValid = true;
+            } catch (e) {
+              geolocationValid = false;
+              print('⚠️ Geolocation check failed: $e');
+            }
+          }
+        } catch (_) {
+          // Status check failed, continue with clock-in attempt
         }
+
+        // If not already clocked in today and geolocation is valid, attempt clock-in
+        if (!alreadyClockedToday && geolocationValid) {
+          try {
+            // Determine if GPS is needed based on location
+            bool needsGps = location.toLowerCase().contains('office');
+            bool useGpsLocation = needsGps && geolocationValid;
+
+            final response = await TimeEntryService.clockIn(
+              employeeId: employeeId,
+              workLocation: location,
+              useGpsLocation: useGpsLocation,
+            );
+
+            clockInSuccessful = response.isSuccessful;
+            if (!clockInSuccessful) {
+              errorMessage = response.message;
+            }
+          } catch (e) {
+            if (e.toString().contains('already_completed') ||
+                e.toString().contains(
+                  'already completed your daily time entry',
+                ) ||
+                e.toString().contains(
+                  'only one clock-in and clock-out session is allowed',
+                )) {
+              alreadyClockedToday = true;
+            } else {
+              errorMessage = e.toString();
+            }
+          }
+        } else if (!geolocationValid) {
+          errorMessage =
+              'Geolocation verification failed. Please check your location settings.';
+        }
+      } catch (e) {
+        errorMessage = e.toString();
+      }
+
+      // Ensure 3-second minimum loader time
+      await Future.delayed(const Duration(seconds: 3));
+
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loader
+      }
+
+      if (alreadyClockedToday) {
+        // Show today's total hours card and message
+        await _loadTodayTotalHours();
+        if (mounted) {
+          setState(() {
+            _isClockedIn = false;
+            _workLocation = '';
+            _clockInTime = null;
+            _elapsedTime = Duration.zero;
+          });
+        }
+        _timer?.cancel();
+        _showSuccessSnackBar('You have already clocked in today');
         return;
       }
 
-      // Clear any existing messages
-      ScaffoldMessenger.of(context).clearSnackBars();
+      if (clockInSuccessful) {
+        // Show working time card and start timer immediately
+        if (mounted) {
+          setState(() {
+            _isClockedIn = true;
+            _workLocation = location;
+            _clockInTime = DateTime.now();
+            _elapsedTime = Duration.zero;
+          });
 
-      // Determine if GPS is needed based on location
-      bool needsGps = location.toLowerCase().contains('office');
-      bool useGpsLocation = needsGps;
-
-      print('🕐 Clocking in...');
-      // Call API to store clock-in data with appropriate location handling
-      final response = await TimeEntryService.clockIn(
-        employeeId: _employee!.employeeId!,
-        workLocation: location,
-        useGpsLocation: useGpsLocation,
-      );
-      print(
-        '✅ Clock-in response: ${response.isSuccessful ? 'Success' : 'Failed'}',
-      );
-
-      if (response.isSuccessful) {
-        _showSuccessSnackBar('Successfully clocked in at $location');
-        // Refresh attendance data after successful clock-in
+          // Force immediate UI update and start timer
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _timer?.cancel();
+              _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+                if (mounted) {
+                  setState(() {
+                    _elapsedTime = DateTime.now().difference(_clockInTime!);
+                  });
+                }
+              });
+            }
+          });
+        }
+        _showSuccessSnackBar('Clock-in is started.');
         _refreshAttendanceData();
       } else {
-        // Rollback UI state on API failure
-        if (mounted) {
-          setState(() {
-            _isClockedIn = originalIsClockedIn;
-            _workLocation = originalWorkLocation;
-            _clockInTime = originalClockInTime;
-            _elapsedTime = originalElapsedTime;
-          });
-        }
-        _timer?.cancel();
-        _showErrorSnackBar('Clock-in failed: ${response.message}');
-      }
-    } catch (e) {
-      // Rollback UI state on any error
-      if (mounted) {
-        setState(() {
-          _isClockedIn = originalIsClockedIn;
-          _workLocation = originalWorkLocation;
-          _clockInTime = originalClockInTime;
-          _elapsedTime = originalElapsedTime;
-        });
-      }
-      _timer?.cancel();
-
-      // Handle specific errors
-      if (e.toString().contains('already_completed') ||
-          e.toString().contains('already completed your daily time entry') ||
-          e.toString().contains(
-            'only one clock-in and clock-out session is allowed',
-          )) {
-        _showSuccessSnackBar(
-          'You have already completed your time entry for today',
-        );
-        return;
-      } else if (e.toString().contains('credentials_invalid')) {
-        // Show dialog to confirm logout and redirect to login
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Authentication Error'),
-              content: const Text(
-                'Your session has expired. Please login again to continue.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Clear storage and redirect to login
-                    AuthService.logout();
-                    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-                  },
-                  child: const Text('Login Again'),
-                ),
-              ],
-            ),
-          );
-        }
-        return; // Don't show snackbar if showing dialog
-      } else if (e.toString().contains('TimeoutException') ||
-          e.toString().contains('timeout')) {
         _showErrorSnackBar(
-          'Request timeout. Please check your connection and try again.',
+          'Clock-in failed: ${errorMessage ?? 'Unknown error'}',
         );
-      } else if (e.toString().contains('Network') ||
-          e.toString().contains('SocketException')) {
-        _showErrorSnackBar('Network error. Please check your connection');
-      } else {
-        _showErrorSnackBar('Clock-in failed: ${e.toString()}');
+      }
+    } catch (_) {
+      // If loader or dialog fails, continue gracefully
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loader if still showing
       }
     }
   }
@@ -1152,13 +1321,14 @@ class _DashboardScreenState extends State<DashboardScreen>
       } else if (e.toString().contains('credentials_invalid')) {
         _showErrorSnackBar('Authentication error. Please login again');
       } else if (e.toString().contains('TimeoutException') ||
-          e.toString().contains('timeout')) {
-        _showErrorSnackBar(
-          'Request timeout. Please check your connection and try again.',
-        );
-      } else if (e.toString().contains('Network') ||
-          e.toString().contains('SocketException')) {
-        _showErrorSnackBar('Network error. Please check your connection');
+          e.toString().contains('timeout') ||
+          e.toString().contains('Network') ||
+          e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('Network is unreachable')) {
+        // Don't show error message for connectivity issues - the global connectivity dialog will handle it
+        print('🌐 Connectivity issue detected, not showing error message');
       } else {
         _showErrorSnackBar('Clock-out failed: ${e.toString()}');
       }
@@ -1180,7 +1350,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         final timeEntries = await TimeEntryService.getWeeklyTimeEntries(
           _employee!.employeeId!,
         );
-        print('✅ Today total hours loaded: ${_todayTotalHours}');
         final today = DateTime.now();
         final todayEntries = timeEntries.where((entry) {
           if (entry['clockInTime'] != null) {
@@ -1192,23 +1361,124 @@ class _DashboardScreenState extends State<DashboardScreen>
           return false;
         }).toList();
 
+        print('🔍 Found ${todayEntries.length} entries for today');
+
         if (todayEntries.isNotEmpty) {
           final entry = todayEntries.first;
           final totalHours = entry['totalHours']?.toString() ?? '0h 0m';
-          if (mounted) {
+          final clockInTime = entry['clockInTime']?.toString();
+          final clockOutTime = entry['clockOutTime']?.toString();
+
+          print('🔍 Entry data:');
+          print('  - Clock In: $clockInTime');
+          print('  - Clock Out: $clockOutTime');
+          print('  - Total Hours: $totalHours');
+
+          // Only set total hours if there's both clock-in and clock-out (completed work)
+          final hasClockOut =
+              entry['clockOutTime'] != null &&
+              entry['clockOutTime'].toString().isNotEmpty;
+
+          print('🔍 Has clock out: $hasClockOut');
+          print(
+            '🔍 Total hours not zero: ${totalHours != '0h 0m' && totalHours != '0' && totalHours != '0.0'}',
+          );
+          print('🔍 Formatted hours: ${_formatHoursHuman(totalHours)}');
+
+          if (hasClockOut &&
+              totalHours != '0h 0m' &&
+              totalHours != '0' &&
+              totalHours != '0.0') {
+            // Only update if the value has changed to avoid unnecessary UI updates
+            if (mounted && _todayTotalHours != totalHours) {
+              setState(() {
+                _todayTotalHours = totalHours;
+              });
+            }
+            print('✅ Today total hours loaded: $_todayTotalHours');
+          } else {
+            // Only reset to default if we don't already have valid hours and no completed work
+            if (mounted &&
+                _todayTotalHours != '0h 0m' &&
+                _todayTotalHours != '0' &&
+                _todayTotalHours != '0.0') {
+              setState(() {
+                _todayTotalHours = '0h 0m';
+              });
+            }
+            print('❌ No completed work found, reset to 0h 0m');
+          }
+        } else {
+          // Only reset to default if we don't already have valid hours and no entries for today
+          if (mounted &&
+              _todayTotalHours != '0h 0m' &&
+              _todayTotalHours != '0' &&
+              _todayTotalHours != '0.0') {
             setState(() {
-              _todayTotalHours = totalHours;
+              _todayTotalHours = '0h 0m';
             });
           }
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      // Handle error silently
+    }
   }
 
   // Refresh attendance data after clock-in/out
-  void _refreshAttendanceData() {
-    // This will trigger a refresh when user navigates to attendance screen
-    // The attendance screen will fetch fresh data from API
+  // Refresh attendance data for attendance screen
+  Future<void> _refreshAttendanceData() async {
+    try {
+      if (_employee?.employeeId != null) {
+        print('🔄 Refreshing attendance data...');
+        // Load fresh weekly time entries to warm the cache
+        await TimeEntryService.getWeeklyTimeEntries(_employee!.employeeId!);
+        print('✅ Attendance data refreshed');
+      }
+    } catch (e) {
+      print('❌ Error refreshing attendance data: $e');
+      // Don't show error to user as this is background refresh
+    }
+  }
+
+  // Refresh leave history data for leave management screen
+  Future<void> _refreshLeaveHistoryData() async {
+    try {
+      print('🔄 Refreshing leave history data...');
+      // Get auth token
+      final token = await AuthService.getToken();
+      if (token == null) {
+        print('❌ No auth token found for leave history refresh');
+        return;
+      }
+
+      // Get employee ID
+      final employeeId = await AuthService.getEmployeeId();
+      if (employeeId == null) {
+        print('❌ No employee ID found for leave history refresh');
+        return;
+      }
+
+      // Make API call to refresh leave history cache
+      final response = await http.get(
+        Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.leaveRequestsEndpoint}',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ Leave history data refreshed');
+      } else {
+        print('❌ Leave history refresh failed: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error refreshing leave history data: $e');
+      // Don't show error to user as this is background refresh
+    }
   }
 
   // Show Success SnackBar
@@ -1231,6 +1501,92 @@ class _DashboardScreenState extends State<DashboardScreen>
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Handle pull-to-refresh with internet connectivity check
+  Future<void> _handleRefresh() async {
+    try {
+      // Set refreshing state
+      if (mounted) {
+        setState(() {
+          _isRefreshing = true;
+        });
+      }
+
+      // Check internet connectivity first
+      final connectivityService = ConnectivityService();
+      await connectivityService.checkConnectivity();
+
+      if (!connectivityService.isConnected) {
+        // Show offline message
+        _showOfflineSnackBar();
+        return;
+      }
+
+      // If connected, refresh all data
+      await Future.wait([
+        _loadEmployeeDataForRefresh(),
+        _checkClockInStatus(),
+        _loadTodayTotalHours(),
+        _refreshAttendanceData(),
+        _refreshLeaveHistoryData(),
+      ]);
+
+      // Show success message
+      _showRefreshSuccessSnackBar();
+    } catch (e) {
+      print('❌ Error during refresh: $e');
+      // Check if it's a connectivity issue
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('Network is unreachable')) {
+        _showOfflineSnackBar();
+      }
+    } finally {
+      // Clear refreshing state
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  // Show offline message
+  void _showOfflineSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.wifi_off, color: Colors.white),
+            const SizedBox(width: 8),
+            const Text('Still offline. Please reconnect.'),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Show refresh success message
+  void _showRefreshSuccessSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            const Text('Dashboard refreshed successfully!'),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

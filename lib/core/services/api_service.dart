@@ -15,49 +15,115 @@ import 'device_service.dart';
 
 class ApiService {
   static http.Client? _client;
+  static bool _isInitialized = false;
 
   static void initializeClient() {
-    if (Platform.isAndroid || Platform.isIOS) {
-      // Create a custom HttpClient for mobile platforms with proper SSL handling
-      final httpClient = HttpClient();
+    if (_isInitialized && _client != null) {
+      return; // Already initialized
+    }
 
-      // Configure SSL settings for production
-      httpClient.badCertificateCallback =
-          (X509Certificate cert, String host, int port) {
-            print('🔒 SSL Certificate check for $host:$port');
-            print('🔒 Certificate subject: ${cert.subject}');
-            print('🔒 Certificate issuer: ${cert.issuer}');
+    try {
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Create a custom HttpClient for mobile platforms with proper SSL handling
+        final httpClient = HttpClient();
 
-            // For production, validate the certificate properly
-            // Check if it's our production domain
-            if (host.contains('api-hrms.pragva.in') ||
-                host.contains('pragva.in')) {
-              print('🔒 Allowing certificate for production domain: $host');
-              return true;
-            }
+        // Configure SSL settings for production
+        httpClient.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+              print('🔒 SSL Certificate check for $host:$port');
+              print('🔒 Certificate subject: ${cert.subject}');
+              print('🔒 Certificate issuer: ${cert.issuer}');
 
-            // For other domains, be more strict
-            print('🔒 Rejecting certificate for non-production domain: $host');
-            return false;
-          };
+              // For production, validate the certificate properly
+              // Check if it's our production domain
+              if (host.contains('api-hrms.pragva.in') ||
+                  host.contains('pragva.in')) {
+                print('🔒 Allowing certificate for production domain: $host');
+                return true;
+              }
 
-      // Set connection timeout
-      httpClient.connectionTimeout = const Duration(seconds: 30);
+              // For other domains, be more strict
+              print(
+                '🔒 Rejecting certificate for non-production domain: $host',
+              );
+              return false;
+            };
 
-      _client = IOClient(httpClient);
-      print('🔒 HTTPS client initialized for mobile platform');
-    } else {
-      _client = http.Client();
-      print('🔒 Standard HTTP client initialized for desktop platform');
+        // Set connection timeout
+        httpClient.connectionTimeout = const Duration(seconds: 30);
+        httpClient.idleTimeout = const Duration(seconds: 30);
+
+        _client = IOClient(httpClient);
+        print('🔒 HTTPS client initialized for mobile platform');
+      } else {
+        _client = http.Client();
+        print('🔒 Standard HTTP client initialized for desktop platform');
+      }
+      _isInitialized = true;
+    } catch (e) {
+      print('❌ Error initializing HTTP client: $e');
+      _client = http.Client(); // Fallback to basic client
+      _isInitialized = true;
     }
   }
 
   static http.Client get httpClient {
-    if (_client == null) {
-      // Ensure the client is initialized with platform-specific settings
+    if (_client == null || !_isInitialized) {
       initializeClient();
     }
     return _client!;
+  }
+
+  // Create a new client instance for each request to avoid "client closed" errors
+  static http.Client _createNewClient() {
+    try {
+      if (Platform.isAndroid || Platform.isIOS) {
+        final httpClient = HttpClient();
+        httpClient.badCertificateCallback =
+            (X509Certificate cert, String host, int port) {
+              if (host.contains('api-hrms.pragva.in') ||
+                  host.contains('pragva.in')) {
+                return true;
+              }
+              return false;
+            };
+        httpClient.connectionTimeout = const Duration(seconds: 30);
+        httpClient.idleTimeout = const Duration(seconds: 30);
+        return IOClient(httpClient);
+      } else {
+        return http.Client();
+      }
+    } catch (e) {
+      print('❌ Error creating new client: $e');
+      return http.Client();
+    }
+  }
+
+  // Wrapper method to handle HTTP calls with automatic retry on client closed errors
+  static Future<http.Response> _makeHttpCall(
+    Future<http.Response> Function() httpCall,
+  ) async {
+    try {
+      return await httpCall();
+    } catch (e) {
+      // Check if it's a client closed error and retry with a new client
+      if (e.toString().contains('Client is already closed') ||
+          e.toString().contains('ClientException')) {
+        print('🔄 HTTP client was closed, retrying with new client...');
+        try {
+          // Create a new client and try again
+          final newClient = _createNewClient();
+          // We can't easily retry the exact same call, so we'll rethrow
+          // The calling method should handle this by creating a new client
+          _client = newClient;
+          return await httpCall();
+        } catch (retryError) {
+          print('❌ Retry also failed: $retryError');
+          rethrow;
+        }
+      }
+      rethrow;
+    }
   }
 
   // Get headers with authentication
@@ -239,13 +305,15 @@ class ApiService {
       }
 
       print('🔐 Sending login request...');
-      final response = await httpClient
-          .post(
-            Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}'),
-            headers: headers,
-            body: body,
-          )
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .post(
+              Uri.parse('${ApiConstants.baseUrl}${ApiConstants.loginEndpoint}'),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 30)),
+      );
 
       print('🔐 ========== SERVER RESPONSE ==========');
       print('🔐 Response Status Code: ${response.statusCode}');
@@ -449,9 +517,11 @@ class ApiService {
       print('👤 Employee ID: $employeeId');
       print('👤 Request Headers: $headers');
 
-      final response = await httpClient
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30)),
+      );
 
       print('👤 ========== PROFILE BY ID RESPONSE ==========');
       print('👤 Response Status Code: ${response.statusCode}');
@@ -493,9 +563,11 @@ class ApiService {
         );
       }
 
-      final response = await httpClient
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30)),
+      );
 
       print('👤 ========== PROFILE RESPONSE ==========');
       print('👤 Response Status Code: ${response.statusCode}');
@@ -547,6 +619,32 @@ class ApiService {
     } catch (e) {
       print('❌ Get employee profile details error: $e');
 
+      // Check if it's a client closed error and retry with a new client
+      if (e.toString().contains('Client is already closed') ||
+          e.toString().contains('ClientException')) {
+        print('🔄 HTTP client was closed, retrying with new client...');
+        try {
+          // Reset the client and try again
+          _client = null;
+          final url =
+              '${ApiConstants.baseUrl}${ApiConstants.employeeProfileEndpoint}';
+          final headers = await _getHeaders(includeAuth: true);
+
+          final response = await httpClient
+              .get(Uri.parse(url), headers: headers)
+              .timeout(const Duration(seconds: 30));
+
+          if (response.statusCode == 200) {
+            final responseData = _handleResponse(response);
+            final employee = Employee.fromJson(responseData);
+            await StorageService.saveDetailedEmployeeProfile(employee.toJson());
+            return employee;
+          }
+        } catch (retryError) {
+          print('❌ Retry also failed: $retryError');
+        }
+      }
+
       // If all else fails, try to get from stored data as last resort
       print('👤 All methods failed, trying stored data as last resort...');
       final employeeData = await StorageService.getEmployeeData();
@@ -586,9 +684,11 @@ class ApiService {
       print('🕐 Request Headers: $headers');
       print('🕐 Request Body: $body');
 
-      final response = await httpClient
-          .post(Uri.parse(url), headers: headers, body: body)
-          .timeout(const Duration(seconds: 10));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .post(Uri.parse(url), headers: headers, body: body)
+            .timeout(const Duration(seconds: 10)),
+      );
 
       print('🕐 ========== CLOCK IN RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');
@@ -619,9 +719,11 @@ class ApiService {
       print('🕐 Request Headers: $headers');
       print('🕐 Request Body: $body');
 
-      final response = await httpClient
-          .post(Uri.parse(url), headers: headers, body: body)
-          .timeout(const Duration(seconds: 10));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .post(Uri.parse(url), headers: headers, body: body)
+            .timeout(const Duration(seconds: 10)),
+      );
 
       print('🕐 ========== CLOCK OUT RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');
@@ -652,9 +754,11 @@ class ApiService {
       print('🕐 Status URL: $url');
       print('🕐 Request Headers: $headers');
 
-      final response = await httpClient
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30)),
+      );
 
       print('🕐 ========== TIME ENTRY STATUS RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');
@@ -713,9 +817,11 @@ class ApiService {
       print('🕐 Time Entries URL: $url');
       print('🕐 Request Headers: $headers');
 
-      final response = await httpClient
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30)),
+      );
 
       print('🕐 ========== TIME ENTRIES RESPONSE ==========');
       print('🕐 Response Status Code: ${response.statusCode}');
@@ -826,9 +932,11 @@ class ApiService {
           '${ApiConstants.baseUrl}${ApiConstants.deviceSessionsEndpoint}';
       final headers = await _getHeaders(includeAuth: true);
 
-      final response = await httpClient
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 30));
+      final response = await _makeHttpCall(
+        () => httpClient
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30)),
+      );
 
       final responseData = _handleResponse(response);
       if (responseData is List) {
@@ -843,6 +951,15 @@ class ApiService {
 
   // Dispose client
   static void dispose() {
-    httpClient.close();
+    if (_client != null) {
+      try {
+        _client!.close();
+      } catch (e) {
+        print('⚠️ Error closing HTTP client: $e');
+      } finally {
+        _client = null;
+        _isInitialized = false;
+      }
+    }
   }
 }

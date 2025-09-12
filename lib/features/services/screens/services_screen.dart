@@ -35,25 +35,22 @@ class _ServicesScreenState extends State<ServicesScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Services'), elevation: 0),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Theme.of(context).primaryColor.withOpacity(0.1),
+            Theme.of(context).scaffoldBackgroundColor,
+          ],
         ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _buildServicesGrid(),
-          ),
+      ),
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: _buildServicesGrid(),
         ),
       ),
     );

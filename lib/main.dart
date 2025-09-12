@@ -6,6 +6,7 @@ import 'core/services/storage_service.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/api_service.dart';
+import 'core/services/connectivity_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,11 +43,17 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
   Future<void> _initializeApp() async {
     // Theme is already initialized before runApp
     _initializeApiService();
+    _initializeConnectivityService();
   }
 
   void _initializeApiService() {
     // Initialize the API service with proper HTTP client configuration
     ApiService.initializeClient();
+  }
+
+  void _initializeConnectivityService() {
+    // Initialize connectivity monitoring
+    ConnectivityService().initialize();
   }
 
   // Theme already initialized
@@ -55,6 +62,7 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _themeService.dispose();
+    ConnectivityService().dispose();
     super.dispose();
   }
 
@@ -76,6 +84,7 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'HRMS',
             debugShowCheckedModeBanner: false,
             theme: themeService.getThemeData(context),

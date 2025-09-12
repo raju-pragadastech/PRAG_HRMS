@@ -65,15 +65,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildUnifiedHeader() {
     return Consumer<ThemeService>(
       builder: (context, themeService, child) {
+        String titleText = 'Home';
+        if (_currentIndex == 0) {
+          titleText = 'Services';
+        } else if (_currentIndex == 2) {
+          titleText = 'Announcements';
+        }
         return AppBar(
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.menu_rounded),
             onPressed: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          title: const Text(
-            'HRMS',
-            style: TextStyle(
+          title: Text(
+            titleText,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -95,37 +101,40 @@ class _HomeScreenState extends State<HomeScreen> {
               margin: const EdgeInsets.only(right: 16),
               child: GestureDetector(
                 onTap: () {
-                  // Handle profile photo tap
+                  Navigator.pushNamed(context, AppRoutes.employeeProfile);
                 },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.2),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                  ),
-                  child: _employee?.profileImage != null
-                      ? ClipOval(
-                          child: Image.network(
-                            _employee!.profileImage!,
-                            width: 32,
-                            height: 32,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 18,
-                              );
-                            },
+                child: Tooltip(
+                  message: 'View Profile',
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.2),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: _employee?.profileImage != null
+                        ? ClipOval(
+                            child: Image.network(
+                              _employee!.profileImage!,
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                );
+                              },
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                            size: 18,
                           ),
-                        )
-                      : const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                  ),
                 ),
               ),
             ),

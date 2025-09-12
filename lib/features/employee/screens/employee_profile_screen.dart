@@ -89,25 +89,14 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        elevation: 0,
-        actions: [
-          if (_employee != null)
-            IconButton(
-              icon: const Icon(Icons.edit_rounded),
-              onPressed: _showEditDialog,
-              tooltip: 'Edit Profile',
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Profile'), elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
+              Theme.of(context).primaryColor.withValues(alpha: 0.1),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
@@ -201,7 +190,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -219,12 +208,16 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.3),
                     width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.2),
                       spreadRadius: 1,
                       blurRadius: 8,
                       offset: const Offset(0, 3),
@@ -237,7 +230,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                       radius: 35,
                       backgroundColor: Theme.of(
                         context,
-                      ).primaryColor.withOpacity(0.1),
+                      ).primaryColor.withValues(alpha: 0.1),
                       child: Icon(
                         Icons.person_rounded,
                         size: 40,
@@ -322,9 +315,11 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -358,7 +353,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -375,7 +370,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -439,7 +434,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -456,7 +451,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
+                    color: Colors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -503,9 +498,11 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
+                    color: Colors.indigo.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.indigo.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.indigo.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     skill,
@@ -531,7 +528,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -548,7 +545,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -619,7 +616,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -708,7 +705,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.indigo.withOpacity(0.1),
+          color: Colors.indigo.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: Colors.indigo),
@@ -745,7 +742,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -762,7 +759,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -783,13 +780,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
               ],
             ),
             const SizedBox(height: 20),
-            _buildSecurityOption(
-              icon: Icons.devices_rounded,
-              title: 'Active Device Sessions',
-              subtitle: 'View all devices where you are currently logged in',
-              color: Colors.blue,
-              onTap: _showDeviceSessionsDialog,
-            ),
             _buildSecurityOption(
               icon: Icons.logout_rounded,
               title: 'Logout from This Device',
@@ -829,7 +819,7 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 18),
@@ -940,144 +930,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
     );
   }
 
-  void _showDeviceSessionsDialog() async {
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Loading device sessions...'),
-            ],
-          ),
-        ),
-      );
-
-      print('📱 Loading device sessions...');
-      // Get device sessions
-      final sessions = await AuthService.getDeviceSessions();
-      print('✅ Device sessions loaded: ${sessions.length} sessions');
-
-      // Close loading dialog
-      if (mounted) Navigator.pop(context);
-
-      // Show device sessions dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Active Device Sessions'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: sessions.isEmpty
-                  ? const Text('No active device sessions found.')
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: sessions.length,
-                      itemBuilder: (context, index) {
-                        final session = sessions[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          child: ListTile(
-                            leading: Icon(
-                              _getDeviceIcon(session['platform'] ?? 'unknown'),
-                              color: Colors.blue,
-                            ),
-                            title: Text(
-                              session['deviceName'] ?? 'Unknown Device',
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Device ID: ${session['deviceId'] ?? 'N/A'}',
-                                ),
-                                Text(
-                                  'Platform: ${session['platform'] ?? 'Unknown'}',
-                                ),
-                                Text(
-                                  'Last Active: ${session['lastActive'] ?? 'Unknown'}',
-                                ),
-                              ],
-                            ),
-                            trailing: session['isCurrentDevice'] == true
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'Current',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog if it's open
-      if (mounted) Navigator.pop(context);
-
-      // Show error dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to load device sessions: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
-      }
-    }
-  }
-
-  IconData _getDeviceIcon(String platform) {
-    switch (platform.toLowerCase()) {
-      case 'android':
-        return Icons.android;
-      case 'ios':
-        return Icons.phone_iphone;
-      case 'windows':
-        return Icons.laptop_windows;
-      case 'macos':
-        return Icons.laptop_mac;
-      case 'linux':
-        return Icons.laptop;
-      default:
-        return Icons.device_unknown;
-    }
-  }
-
   Future<void> _logoutFromCurrentDevice() async {
     try {
       // Show loading
@@ -1186,35 +1038,5 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         );
       }
     }
-  }
-
-  void _showEditDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: const Text(
-          'Profile editing functionality will be implemented here. You can edit personal details, job information, and other profile data.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Profile updated successfully!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Save Changes'),
-          ),
-        ],
-      ),
-    );
   }
 }

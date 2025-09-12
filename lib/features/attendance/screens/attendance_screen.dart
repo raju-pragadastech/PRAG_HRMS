@@ -267,15 +267,19 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         setState(() {
           if (e.toString().contains('SocketException') ||
               e.toString().contains('Failed host lookup') ||
-              e.toString().contains('Network')) {
-            _error = 'Network error. Please check your internet connection.';
+              e.toString().contains('Network') ||
+              e.toString().contains('HandshakeException') ||
+              e.toString().contains('Connection refused') ||
+              e.toString().contains('Network is unreachable') ||
+              e.toString().contains('TimeoutException')) {
+            // Don't show error message for connectivity issues - the global connectivity dialog will handle it
+            print('🌐 Connectivity issue detected, not showing error message');
+            _error = null; // Clear any existing error
           } else if (e.toString().contains('JSON') ||
               e.toString().contains('type \'String\' is not a subtype')) {
             _error = 'Data parsing error. Please try again.';
           } else if (e.toString().contains('HttpException')) {
             _error = 'Server error. Please try again later.';
-          } else if (e.toString().contains('TimeoutException')) {
-            _error = 'Request timeout. Please check your internet connection.';
           } else {
             _error = 'Failed to load attendance data: ${e.toString()}';
           }
@@ -552,11 +556,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               _startTimer();
             },
             tooltip: 'Refresh Data',
-          ),
-          IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Export Attendance',
-            onPressed: _exportAttendanceData,
           ),
         ],
       ),
@@ -1412,15 +1411,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
         Text(value),
       ],
-    );
-  }
-
-  void _exportAttendanceData() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Attendance data exported successfully'),
-        backgroundColor: Colors.green,
-      ),
     );
   }
 

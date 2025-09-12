@@ -85,7 +85,7 @@ class _LeaveScreenState extends State<LeaveScreen>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).primaryColor.withOpacity(0.05),
+              Theme.of(context).primaryColor.withValues(alpha: 0.05),
               Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
@@ -102,7 +102,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       spreadRadius: 1,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
@@ -157,7 +157,11 @@ class _LeaveScreenState extends State<LeaveScreen>
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.indigo : Colors.transparent,
+          color: isSelected
+              ? (Theme.of(context).brightness == Brightness.dark
+                    ? const Color.fromARGB(255, 220, 152, 50)
+                    : const Color.fromARGB(255, 44, 48, 241))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -207,7 +211,7 @@ class _LeaveScreenState extends State<LeaveScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
@@ -222,12 +226,18 @@ class _LeaveScreenState extends State<LeaveScreen>
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.indigo.withOpacity(0.1),
+                        color:
+                            (Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.orange
+                                    : Colors.blue)
+                                .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.event_available_rounded,
-                        color: Colors.indigo,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.orange
+                            : Colors.blue,
                         size: 20,
                       ),
                     ),
@@ -248,7 +258,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                 _buildFormField(
                   label: 'Leave Type',
                   child: DropdownButtonFormField<String>(
-                    value: _selectedLeaveType,
+                    initialValue: _selectedLeaveType,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -287,7 +297,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                   _buildFormField(
                     label: 'Half Day Type',
                     child: DropdownButtonFormField<String>(
-                      value: _selectedHalfDayType,
+                      initialValue: _selectedHalfDayType,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -334,7 +344,11 @@ class _LeaveScreenState extends State<LeaveScreen>
                               children: [
                                 Icon(
                                   Icons.calendar_today,
-                                  color: Colors.indigo,
+                                  color:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.orange
+                                      : Colors.blue,
                                   size: 16,
                                 ),
                                 const SizedBox(width: 8),
@@ -384,7 +398,10 @@ class _LeaveScreenState extends State<LeaveScreen>
                                   Icons.calendar_today,
                                   color: _selectedLeaveType == 'HALF_DAY'
                                       ? Colors.grey.shade400
-                                      : Colors.indigo,
+                                      : (Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.orange
+                                            : Colors.blue),
                                   size: 16,
                                 ),
                                 const SizedBox(width: 8),
@@ -443,7 +460,10 @@ class _LeaveScreenState extends State<LeaveScreen>
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _submitLeaveRequest,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? Colors.orange
+                          : Colors.blue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -451,7 +471,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                       elevation: 2,
                     ),
                     child: _isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 16,
                             width: 16,
                             child: CircularProgressIndicator(
@@ -478,7 +498,15 @@ class _LeaveScreenState extends State<LeaveScreen>
 
   Widget _buildHistoryTab() {
     if (_isLoadingHistory) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).brightness == Brightness.dark
+                ? Colors.orange
+                : Colors.blue,
+          ),
+        ),
+      );
     }
 
     if (_leaveHistory.isEmpty) {
@@ -691,16 +719,18 @@ class _LeaveScreenState extends State<LeaveScreen>
         icon = Icons.cancel;
         break;
       default:
-        color = Colors.orange;
+        color = Theme.of(context).brightness == Brightness.dark
+            ? Colors.orange
+            : Colors.blue;
         icon = Icons.hourglass_empty;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -978,7 +1008,16 @@ class _LeaveScreenState extends State<LeaveScreen>
       }
     } catch (e) {
       print('❌ Exception: $e');
-      _showSnackBar('Error: ${e.toString()}', Colors.red);
+      // Check if it's a connectivity issue
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('Network is unreachable')) {
+        // Don't show error message for connectivity issues - the global connectivity dialog will handle it
+        print('🌐 Connectivity issue detected, not showing error message');
+      } else {
+        _showSnackBar('Error: ${e.toString()}', Colors.red);
+      }
     } finally {
       setState(() {
         _isSubmitting = false;
@@ -1081,7 +1120,19 @@ class _LeaveScreenState extends State<LeaveScreen>
       }
     } catch (e) {
       print('❌ Exception loading leave history: $e');
-      _showSnackBar('Error loading leave history: ${e.toString()}', Colors.red);
+      // Check if it's a connectivity issue
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException') ||
+          e.toString().contains('Connection refused') ||
+          e.toString().contains('Network is unreachable')) {
+        // Don't show error message for connectivity issues - the global connectivity dialog will handle it
+        print('🌐 Connectivity issue detected, not showing error message');
+      } else {
+        _showSnackBar(
+          'Error loading leave history: ${e.toString()}',
+          Colors.red,
+        );
+      }
     } finally {
       setState(() {
         _isLoadingHistory = false;
