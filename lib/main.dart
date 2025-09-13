@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'core/routes/app_routes.dart';
-import 'core/services/storage_service.dart';
 import 'core/services/theme_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/api_service.dart';
@@ -69,10 +68,16 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.detached) {
-      // App is being terminated - clear sensitive data
-      print('📱 App being terminated - clearing sensitive data');
-      StorageService.clearAll();
+    if (state == AppLifecycleState.paused) {
+      // App is going to background - save current state but don't clear data
+      print('📱 App paused - going to background');
+    } else if (state == AppLifecycleState.resumed) {
+      // App is coming back to foreground - restore state if needed
+      print('📱 App resumed - coming back to foreground');
+    } else if (state == AppLifecycleState.detached) {
+      // App is being terminated - only clear sensitive data if user explicitly logged out
+      // Don't clear authentication data as user should stay logged in
+      print('📱 App being terminated - preserving authentication state');
     }
   }
 

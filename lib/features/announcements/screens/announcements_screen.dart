@@ -6,16 +6,20 @@ class AnnouncementsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          gradient: Theme.of(context).brightness == Brightness.dark
+              ? null // No gradient for dark theme - pure black background
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                ),
         ),
         child: Center(
           child: Column(
@@ -24,7 +28,12 @@ class AnnouncementsScreen extends StatelessWidget {
               Icon(
                 Icons.error_outline_rounded,
                 size: 60,
-                color: const Color.fromARGB(255, 255, 255, 255),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors
+                          .white // White for dark theme
+                    : Theme.of(
+                        context,
+                      ).primaryColor, // Primary color for light theme
               ),
               const SizedBox(height: 16),
               Text(
@@ -32,7 +41,12 @@ class AnnouncementsScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: const Color.fromRGBO(255, 255, 255, 1),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors
+                            .white // White for dark theme
+                      : Theme.of(
+                          context,
+                        ).primaryColor, // Primary color for light theme
                 ),
                 textAlign: TextAlign.center,
               ),

@@ -40,9 +40,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Loading state for central loading overlay
   bool _isLoadingDashboardData = true;
 
-  // Loading state for refresh
-  bool _isRefreshing = false;
-
   @override
   void initState() {
     super.initState();
@@ -323,14 +320,17 @@ class _DashboardScreenState extends State<DashboardScreen>
           onRefresh: _handleRefresh,
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Theme.of(context).primaryColor.withOpacity(0.1),
-                  Theme.of(context).scaffoldBackgroundColor,
-                ],
-              ),
+              color: Theme.of(context).scaffoldBackgroundColor,
+              gradient: Theme.of(context).brightness == Brightness.dark
+                  ? null // No gradient for dark theme - pure black background
+                  : LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).primaryColor.withOpacity(0.1),
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ],
+                    ),
             ),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -1135,7 +1135,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             _clockInTime = null;
             _elapsedTime = Duration.zero;
           });
-          // Force immediate UI update
+          // Force immediate UI update to show Today's Total Hours Card
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               setState(() {});
@@ -1157,18 +1157,20 @@ class _DashboardScreenState extends State<DashboardScreen>
             _elapsedTime = Duration.zero;
           });
 
-          // Force immediate UI update and start timer
+          // Start timer immediately
+          _timer?.cancel();
+          _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+            if (mounted) {
+              setState(() {
+                _elapsedTime = DateTime.now().difference(_clockInTime!);
+              });
+            }
+          });
+
+          // Force immediate UI update to show Work Timer Card
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               setState(() {});
-              _timer?.cancel();
-              _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-                if (mounted) {
-                  setState(() {
-                    _elapsedTime = DateTime.now().difference(_clockInTime!);
-                  });
-                }
-              });
             }
           });
         }
@@ -1275,46 +1277,35 @@ class _DashboardScreenState extends State<DashboardScreen>
     // Cancel timer immediately
     _timer?.cancel();
 
+    // Load today's total hours immediately to show the card
+    await _loadTodayTotalHours();
+
+    // Force immediate UI update to show Today's Total Hours Card
+    if (mounted) {
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+
     // Show immediate success message
-    _showSuccessSnackBar('Clocking out...');
+    _showSuccessSnackBar('Clock-out Successful');
 
     try {
-      // Clear any existing messages
-      ScaffoldMessenger.of(context).clearSnackBars();
-
-      // Determine if GPS is needed based on work location
-      bool needsGps = currentWorkLocation.toLowerCase().contains('office');
-      bool useGpsLocation = needsGps;
-
       print('🕐 Clocking out...');
-      // Call API to store clock-out data with appropriate location handling
+      // Call API to store clock-out data without GPS verification
       final response = await TimeEntryService.clockOut(
         employeeId: _employee!.employeeId!,
         workLocation: currentWorkLocation,
-        useGpsLocation: useGpsLocation,
+        useGpsLocation: false, // GPS not used for clock-out
       );
       print(
         '✅ Clock-out response: ${response.isSuccessful ? 'Success' : 'Failed'}',
       );
 
       if (response.isSuccessful) {
-        // Load today's total hours before updating UI
-        await _loadTodayTotalHours();
-
-        // Force immediate UI update to show total hours card
-        if (mounted) {
-          setState(() {});
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {});
-            }
-          });
-        }
-
-        _showSuccessSnackBar(
-          'Clocked out successfully. Total hours: ${response.totalHours ?? _todayTotalHours}',
-        );
-
         // Refresh attendance data after successful clock-out
         _refreshAttendanceData();
       } else {
@@ -1531,13 +1522,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Handle pull-to-refresh with internet connectivity check
   Future<void> _handleRefresh() async {
     try {
-      // Set refreshing state
-      if (mounted) {
-        setState(() {
-          _isRefreshing = true;
-        });
-      }
-
       // Check internet connectivity first
       final connectivityService = ConnectivityService();
       await connectivityService.checkConnectivity();
@@ -1569,12 +1553,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         _showOfflineSnackBar();
       }
     } finally {
-      // Clear refreshing state
-      if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-        });
-      }
+      // Refresh completed
     }
   }
 
@@ -1604,7 +1583,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 8),
-            const Text('Dashboard refreshed successfully!'),
+            const Text('Employee Data Refreshed Successfully!'),
           ],
         ),
         backgroundColor: Colors.green,

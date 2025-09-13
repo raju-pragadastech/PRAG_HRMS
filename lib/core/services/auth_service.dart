@@ -1,6 +1,9 @@
 import '../models/login_request.dart';
 import '../models/login_response.dart';
 import '../models/employee.dart';
+import '../models/change_password_request.dart';
+import '../models/forgot_password_request.dart';
+import '../models/reset_password_request.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
 import 'device_service.dart';
@@ -294,5 +297,71 @@ class AuthService {
     // For now, return true if token exists
     final token = await getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // Change password
+  static Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      print('🔐 Changing password...');
+
+      final request = ChangePasswordRequest(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+
+      final response = await ApiService.changePassword(request);
+      print('✅ Password changed successfully');
+      return response;
+    } catch (e) {
+      print('❌ Error changing password: $e');
+      rethrow;
+    }
+  }
+
+  // Forgot password
+  static Future<Map<String, dynamic>> forgotPassword(
+    String employeeIdOrEmail,
+  ) async {
+    try {
+      print('🔐 Sending forgot password request...');
+
+      final request = ForgotPasswordRequest(
+        employeeIdOrEmail: employeeIdOrEmail,
+      );
+
+      final response = await ApiService.forgotPassword(request);
+      print('✅ Forgot password request sent successfully');
+      return response;
+    } catch (e) {
+      print('❌ Error sending forgot password request: $e');
+      rethrow;
+    }
+  }
+
+  // Reset password
+  static Future<Map<String, dynamic>> resetPassword(
+    String token,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    try {
+      print('🔐 Resetting password...');
+
+      final request = ResetPasswordRequest(
+        token: token,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      );
+
+      final response = await ApiService.resetPassword(request);
+      print('✅ Password reset successfully');
+      return response;
+    } catch (e) {
+      print('❌ Error resetting password: $e');
+      rethrow;
+    }
   }
 }

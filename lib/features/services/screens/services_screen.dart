@@ -37,14 +37,17 @@ class _ServicesScreenState extends State<ServicesScreen>
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).primaryColor.withOpacity(0.1),
-            Theme.of(context).scaffoldBackgroundColor,
-          ],
-        ),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        gradient: Theme.of(context).brightness == Brightness.dark
+            ? null // No gradient for dark theme - pure black background
+            : LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Theme.of(context).primaryColor.withOpacity(0.1),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+              ),
       ),
       child: FadeTransition(
         opacity: _fadeAnimation,

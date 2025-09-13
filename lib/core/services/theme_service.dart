@@ -358,27 +358,33 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
         surfaceTint: Color(0xFFFFFFFF), // White surface tint
         tertiary: Color(0xFFFFFFFF), // White tertiary
         onTertiary: Color(0xFF000000), // Black text on tertiary
-        surfaceVariant: Color(0xFF000000), // Pure black surface variant
+        surfaceVariant: Color(0xFF1A1A1A), // Light dark shade surface variant
         onSurfaceVariant: Color(0xFFFFFFFF), // White text on surface variant
-        primaryContainer: Color(0xFF000000), // Pure black primary container
+        primaryContainer: Color(
+          0xFF1A1A1A,
+        ), // Light dark shade primary container
         onPrimaryContainer: Color(
           0xFFFFFFFF,
         ), // White text on primary container
-        secondaryContainer: Color(0xFF000000), // Pure black secondary container
+        secondaryContainer: Color(
+          0xFF1A1A1A,
+        ), // Light dark shade secondary container
         onSecondaryContainer: Color(
           0xFFFFFFFF,
         ), // White text on secondary container
-        tertiaryContainer: Color(0xFF000000), // Pure black tertiary container
+        tertiaryContainer: Color(
+          0xFF1A1A1A,
+        ), // Light dark shade tertiary container
         onTertiaryContainer: Color(
           0xFFFFFFFF,
         ), // White text on tertiary container
-        errorContainer: Color(0xFF000000), // Pure black error container
+        errorContainer: Color(0xFF1A1A1A), // Light dark shade error container
         onErrorContainer: Color(0xFFFFFFFF), // White text on error container
       ),
       // Force pure black theme
-      scaffoldBackgroundColor: const Color(0xFF000000),
-      cardColor: const Color(0xFF000000),
-      canvasColor: const Color(0xFF000000),
+      scaffoldBackgroundColor: const Color(0xFF000000), // Pure black background
+      cardColor: const Color(0xFF1A1A1A), // Light dark shade for cards
+      canvasColor: const Color(0xFF000000), // Pure black canvas
       primaryColor: const Color(0xFFFFFFFF),
       primaryColorDark: const Color(0xFFFFFFFF),
       primaryColorLight: const Color(0xFFFFFFFF),
@@ -400,8 +406,8 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
         surfaceTintColor: Colors.transparent,
       ),
       cardTheme: const CardThemeData(
-        color: Color(0xFF000000), // Pure black card
-        elevation: 0, // No elevation
+        color: Color(0xFF1A1A1A), // Light dark shade for cards
+        elevation: 2, // Subtle elevation
         shadowColor: Color(0xFF000000),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
@@ -453,7 +459,7 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
       ),
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: Color(0xFF1E1E1E), // Android dark surface
+        fillColor: Color(0xFF1A1A1A), // Light dark shade for inputs
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(
             Radius.circular(4),
@@ -500,24 +506,24 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
       listTileTheme: const ListTileThemeData(
         textColor: Color(0xFFFFFFFF), // White text
         iconColor: Color(0xFFFFFFFF), // White icons
-        tileColor: Colors.transparent,
+        tileColor: Color(0xFF1A1A1A), // Light dark shade for list tiles
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(4)),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Color(0xFF000000), // Pure black
+        backgroundColor: Color(0xFF1A1A1A), // Light dark shade for bottom nav
         selectedItemColor: Color(0xFFFFFFFF), // White selected
-        unselectedItemColor: Color(0xFFFFFFFF), // White unselected
+        unselectedItemColor: Color(0xFF888888), // Muted white for unselected
         type: BottomNavigationBarType.fixed,
-        elevation: 0,
+        elevation: 2,
         selectedLabelStyle: TextStyle(fontWeight: FontWeight.w500),
       ),
       drawerTheme: const DrawerThemeData(
-        backgroundColor: Color(0xFF000000), // Pure black
+        backgroundColor: Color(0xFF1A1A1A), // Light dark shade for drawer
         surfaceTintColor: Colors.transparent,
-        elevation: 0,
+        elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
             topRight: Radius.circular(16),
@@ -527,10 +533,10 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: const Color(
-          0xFF1E1E1E,
-        ), // Light black for better visibility
+          0xFF1A1A1A,
+        ), // Light dark shade for dialogs
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         titleTextStyle: const TextStyle(
           color: Colors.white, // Pure white text
           fontSize: 20,
@@ -541,8 +547,8 @@ class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
-        elevation: 0,
-        shadowColor: Colors.black.withOpacity(0.5),
+        elevation: 4,
+        shadowColor: Colors.black.withOpacity(0.3),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: const Color(0xFF000000), // Pure black

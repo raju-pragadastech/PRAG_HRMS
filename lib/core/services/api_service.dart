@@ -10,6 +10,9 @@ import '../models/clock_in_request.dart';
 import '../models/clock_out_request.dart';
 import '../models/time_entry_response.dart';
 import '../models/time_entry_status.dart';
+import '../models/change_password_request.dart';
+import '../models/forgot_password_request.dart';
+import '../models/reset_password_request.dart';
 import 'storage_service.dart';
 import 'device_service.dart';
 
@@ -945,6 +948,120 @@ class ApiService {
       return [];
     } catch (e) {
       print('❌ Get device sessions error: $e');
+      rethrow;
+    }
+  }
+
+  // Change password
+  static Future<Map<String, dynamic>> changePassword(
+    ChangePasswordRequest request,
+  ) async {
+    try {
+      print('🔐 ========== CHANGE PASSWORD DEBUG START ==========');
+      print(
+        '🔐 Change password endpoint: ${ApiConstants.baseUrl}${ApiConstants.changePasswordEndpoint}',
+      );
+
+      final headers = await _getHeaders();
+      final body = json.encode(request.toJson());
+      print('🔐 Request Body: $body');
+
+      final response = await _makeHttpCall(
+        () => httpClient
+            .put(
+              Uri.parse(
+                '${ApiConstants.baseUrl}${ApiConstants.changePasswordEndpoint}',
+              ),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 30)),
+      );
+
+      final responseData = _handleResponse(response);
+      print('🔐 Change password response: ${responseData}');
+      print('🔐 ========== CHANGE PASSWORD DEBUG END ==========');
+      return responseData;
+    } catch (e) {
+      print('❌ Change password error: $e');
+      rethrow;
+    }
+  }
+
+  // Forgot password
+  static Future<Map<String, dynamic>> forgotPassword(
+    ForgotPasswordRequest request,
+  ) async {
+    try {
+      print('🔐 ========== FORGOT PASSWORD DEBUG START ==========');
+      print(
+        '🔐 Forgot password endpoint: ${ApiConstants.baseUrl}${ApiConstants.forgotPasswordEndpoint}',
+      );
+
+      final headers = await _getHeaders();
+      final body = json.encode(request.toJson());
+      print('🔐 Request Body: $body');
+
+      final response = await _makeHttpCall(
+        () => httpClient
+            .post(
+              Uri.parse(
+                '${ApiConstants.baseUrl}${ApiConstants.forgotPasswordEndpoint}',
+              ),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 30)),
+      );
+
+      final responseData = _handleResponse(response);
+      print('🔐 Forgot password response: ${responseData}');
+      print('🔐 Response token: ${responseData['token']}');
+      print('🔐 Response resetToken: ${responseData['resetToken']}');
+      print('🔐 ========== FORGOT PASSWORD DEBUG END ==========');
+      return responseData;
+    } catch (e) {
+      print('❌ Forgot password error: $e');
+      rethrow;
+    }
+  }
+
+  // Reset password
+  static Future<Map<String, dynamic>> resetPassword(
+    ResetPasswordRequest request,
+  ) async {
+    try {
+      print('🔐 ========== RESET PASSWORD DEBUG START ==========');
+      print(
+        '🔐 Reset password endpoint: ${ApiConstants.baseUrl}${ApiConstants.resetPasswordEndpoint}',
+      );
+
+      final headers = await _getHeaders();
+      final body = json.encode(request.toJson());
+      print('🔐 Request Body: $body');
+      print('🔐 Request JSON: ${request.toJson()}');
+      print('🔐 Token being sent: ${request.token}');
+      print('🔐 New Password length: ${request.newPassword.length}');
+      print('🔐 Confirm Password length: ${request.confirmPassword.length}');
+
+      final response = await _makeHttpCall(
+        () => httpClient
+            .post(
+              Uri.parse(
+                '${ApiConstants.baseUrl}${ApiConstants.resetPasswordEndpoint}',
+              ),
+              headers: headers,
+              body: body,
+            )
+            .timeout(const Duration(seconds: 30)),
+      );
+
+      final responseData = _handleResponse(response);
+      print('🔐 Reset password response: ${responseData}');
+      print('🔐 ========== RESET PASSWORD DEBUG END ==========');
+      return responseData;
+    } catch (e) {
+      print('❌ Reset password error: $e');
       rethrow;
     }
   }

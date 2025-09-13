@@ -148,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: _buildUnifiedHeader(),
@@ -211,6 +212,9 @@ class _HomeScreenState extends State<HomeScreen> {
         return Drawer(
           width:
               MediaQuery.of(context).size.width * 0.65, // 65% of screen width
+          backgroundColor: themeService.isDarkMode
+              ? const Color(0xFF000000) // Pure black for dark theme
+              : null, // Use theme default for light theme
           child: ListView(
             padding: EdgeInsets.zero,
             children: [

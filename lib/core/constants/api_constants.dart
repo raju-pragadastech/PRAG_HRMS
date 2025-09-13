@@ -38,6 +38,11 @@ class ApiConstants {
   static const String leaveRequestsEmployeeEndpoint =
       '/leave-requests/employee';
 
+  // Password Management Endpoints
+  static const String changePasswordEndpoint = '/employee/change-password';
+  static const String forgotPasswordEndpoint = '/employee/forgot-password';
+  static const String resetPasswordEndpoint = '/employee/reset-password';
+
   // Headers
   static const String contentTypeJson = 'application/json';
   static const String contentTypeMultipart = 'multipart/form-data';

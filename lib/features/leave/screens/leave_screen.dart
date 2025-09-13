@@ -78,17 +78,21 @@ class _LeaveScreenState extends State<LeaveScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(title: const Text('Leave Management'), elevation: 0),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withValues(alpha: 0.05),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          gradient: Theme.of(context).brightness == Brightness.dark
+              ? null // No gradient for dark theme - pure black background
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).primaryColor.withValues(alpha: 0.05),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                ),
         ),
         child: Column(
           children: [

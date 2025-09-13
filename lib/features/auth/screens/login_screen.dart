@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../core/services/auth_service.dart';
+import '../widgets/forgot_password_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,19 +22,41 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _passwordError;
 
   @override
+  void initState() {
+    super.initState();
+    // Clear authentication state when user is on login screen
+    // This ensures that if user kills app from login screen, it restarts on login screen
+    _clearAuthenticationState();
+  }
+
+  Future<void> _clearAuthenticationState() async {
+    try {
+      // Clear authentication data to ensure login screen restart
+      await AuthService.logout();
+      print('🔐 Cleared authentication state for login screen restart');
+    } catch (e) {
+      print('❌ Error clearing authentication state: $e');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withOpacity(0.1),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          gradient: Theme.of(context).brightness == Brightness.dark
+              ? null // No gradient for dark theme - pure black background
+              : LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).primaryColor.withOpacity(0.1),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                ),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -339,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildForgotPassword() {
     return TextButton(
       onPressed: () {
-        // TODO: Implement forgot password functionality
+        _showForgotPasswordDialog();
       },
       child: Text(
         'Forgot Password?',
@@ -559,5 +582,21 @@ class _LoginScreenState extends State<LoginScreen> {
     // Check if it's a valid employee ID (alphanumeric, at least 3 characters)
     final employeeIdRegex = RegExp(r'^[A-Za-z0-9]{3,}$');
     return employeeIdRegex.hasMatch(input);
+  }
+
+  // Show forgot password dialog
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return ForgotPasswordDialog(
+          onSuccess: (token) {
+            // This won't be called since we handle success in the dialog itself
+            Navigator.of(context).pop();
+          },
+        );
+      },
+    );
   }
 }
