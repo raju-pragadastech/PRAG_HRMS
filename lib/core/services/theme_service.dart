@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'storage_service.dart';
 
-class ThemeService extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.light; // Default to light theme
+class ThemeService extends ChangeNotifier with WidgetsBindingObserver {
+  ThemeMode _themeMode = ThemeMode.system; // Default to system theme
   bool _isAuthenticated = false;
 
   ThemeMode get themeMode => _themeMode;
@@ -44,6 +44,9 @@ class ThemeService extends ChangeNotifier {
   // Initialize theme from storage
   Future<void> initializeTheme() async {
     try {
+      // Add observer for system brightness changes
+      WidgetsBinding.instance.addObserver(this);
+
       // Check if user is authenticated first
       final isAuthenticated = await StorageService.isLoggedIn();
       _isAuthenticated = isAuthenticated;
@@ -55,37 +58,39 @@ class ThemeService extends ChangeNotifier {
           _themeMode = _getThemeModeFromString(savedTheme);
           print('🎨 Loaded saved theme: $savedTheme');
         } else {
-          _themeMode = ThemeMode.light; // Default to light if no saved theme
-          print('🎨 No saved theme, using light mode');
+          _themeMode = ThemeMode.system; // Default to system if no saved theme
+          print('🎨 No saved theme, using system theme');
         }
       } else {
-        // Default to light theme for unauthenticated users
-        _themeMode = ThemeMode.light;
-        print('🎨 User not authenticated, using light mode');
+        // Default to system theme for unauthenticated users
+        _themeMode = ThemeMode.system;
+        print('🎨 User not authenticated, using system theme');
       }
       notifyListeners();
     } catch (e) {
       print('❌ Error initializing theme: $e');
-      // Fallback to light theme
-      _themeMode = ThemeMode.light;
+      // Fallback to system theme
+      _themeMode = ThemeMode.system;
       _isAuthenticated = false;
       notifyListeners();
     }
   }
 
-  // Set theme mode (only works when authenticated)
+  // Set theme mode (works for all users)
   Future<void> setThemeMode(ThemeMode mode) async {
-    if (!_isAuthenticated) {
-      print('⚠️ Theme changes are only allowed after login');
-      return;
-    }
-
     _themeMode = mode;
     notifyListeners();
 
     try {
-      await StorageService.saveThemeMode(themeModeString);
-      print('🎨 Theme mode saved: $themeModeString');
+      // Only save theme if user is authenticated
+      if (_isAuthenticated) {
+        await StorageService.saveThemeMode(themeModeString);
+        print('🎨 Theme mode saved: $themeModeString');
+      } else {
+        print(
+          '🎨 Theme mode changed to: $themeModeString (not saved - user not authenticated)',
+        );
+      }
     } catch (e) {
       print('❌ Error saving theme mode: $e');
     }
@@ -115,6 +120,24 @@ class ThemeService extends ChangeNotifier {
 
   // Get authentication status
   bool get isAuthenticated => _isAuthenticated;
+
+  // Handle system brightness changes
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    // Only notify listeners if we're using system theme
+    if (_themeMode == ThemeMode.system) {
+      print('🎨 System brightness changed, updating theme');
+      notifyListeners();
+    }
+  }
+
+  // Dispose method
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   // Force light theme (for pre-login screens)
   void forceLightTheme() {

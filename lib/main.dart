@@ -61,7 +61,6 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _themeService.dispose();
     ConnectivityService().dispose();
     super.dispose();
   }

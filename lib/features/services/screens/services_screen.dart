@@ -247,41 +247,22 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with cake icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.pink.shade400, Colors.pink.shade600],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.cake_rounded, color: Colors.white, size: 32),
+              // Error icon
+              Icon(
+                Icons.error_outline_rounded,
+                size: 60,
+                color: Colors.pink.shade400,
               ),
               const SizedBox(height: 16),
               Text(
-                'Upcoming Birthdays 🎂',
+                'This feature is coming soon.',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Celebrate with your colleagues!',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Birthday list
-              ..._buildBirthdayList(),
               const SizedBox(height: 20),
               // Close button
               SizedBox(
@@ -310,69 +291,6 @@ class _ServicesScreenState extends State<ServicesScreen>
     );
   }
 
-  List<Widget> _buildBirthdayList() {
-    final birthdays = [
-      {'name': 'Sarah Johnson', 'date': 'Tomorrow', 'isToday': false},
-      {'name': 'Mike Chen', 'date': 'Dec 28', 'isToday': false},
-      {'name': 'Lisa Davis', 'date': 'Jan 3', 'isToday': false},
-      {'name': 'Tom Wilson', 'date': 'Jan 7', 'isToday': false},
-    ];
-
-    return birthdays.map((birthday) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.pink.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.pink.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.pink.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_rounded,
-                color: Colors.pink,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    birthday['name'] as String,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    birthday['date'] as String,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.cake_rounded, color: Colors.pink.shade400, size: 20),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
   void _showAnnouncements() {
     showDialog(
       context: context,
@@ -396,45 +314,22 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with announcement icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue.shade400, Colors.blue.shade600],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.campaign_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+              // Error icon
+              Icon(
+                Icons.error_outline_rounded,
+                size: 60,
+                color: Colors.blue.shade400,
               ),
               const SizedBox(height: 16),
               Text(
-                'Latest Announcements 📢',
+                'This feature is coming soon.',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Stay updated with company news',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Announcements list
-              ..._buildAnnouncementsList(),
               const SizedBox(height: 20),
               // Close button
               SizedBox(
@@ -486,45 +381,22 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with calendar icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.green.shade400, Colors.green.shade600],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.calendar_today_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+              // Error icon
+              Icon(
+                Icons.error_outline_rounded,
+                size: 60,
+                color: Colors.green.shade400,
               ),
               const SizedBox(height: 16),
               Text(
-                'Leave Tracker 🗓️',
+                'This feature is coming soon.',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Track your leave balance',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Leave details
-              ..._buildLeaveDetails(),
               const SizedBox(height: 20),
               // Close button
               SizedBox(
@@ -576,45 +448,22 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with task icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.orange.shade400, Colors.orange.shade600],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.task_alt_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+              // Error icon
+              Icon(
+                Icons.error_outline_rounded,
+                size: 60,
+                color: Colors.orange.shade400,
               ),
               const SizedBox(height: 16),
               Text(
-                'Assigned Tasks ✅',
+                'This feature is coming soon.',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Your current task list',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Tasks list
-              ..._buildTasksList(),
               const SizedBox(height: 20),
               // Close button
               SizedBox(
@@ -666,45 +515,22 @@ class _ServicesScreenState extends State<ServicesScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header with celebration icon
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.purple.shade400, Colors.purple.shade600],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.celebration_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
+              // Error icon
+              Icon(
+                Icons.error_outline_rounded,
+                size: 60,
+                color: Colors.purple.shade400,
               ),
               const SizedBox(height: 16),
               Text(
-                'Upcoming Holidays 🎉',
+                'This feature is coming soon.',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                   color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Plan your time off',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Holidays list
-              ..._buildHolidaysList(),
               const SizedBox(height: 20),
               // Close button
               SizedBox(
@@ -731,325 +557,5 @@ class _ServicesScreenState extends State<ServicesScreen>
         ),
       ),
     );
-  }
-
-  List<Widget> _buildAnnouncementsList() {
-    final announcements = [
-      {
-        'title': 'Company Holiday Notice',
-        'date': 'Dec 20, 2024',
-        'priority': 'High',
-      },
-      {
-        'title': 'New Employee Welcome',
-        'date': 'Dec 18, 2024',
-        'priority': 'Medium',
-      },
-      {
-        'title': 'System Maintenance',
-        'date': 'Dec 15, 2024',
-        'priority': 'High',
-      },
-      {
-        'title': 'Team Building Event',
-        'date': 'Dec 12, 2024',
-        'priority': 'Low',
-      },
-    ];
-
-    return announcements.map((announcement) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.blue.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.campaign_rounded,
-                color: Colors.blue,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    announcement['title'] as String,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    announcement['date'] as String,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: announcement['priority'] == 'High'
-                    ? Colors.red.withOpacity(0.1)
-                    : announcement['priority'] == 'Medium'
-                    ? Colors.orange.withOpacity(0.1)
-                    : Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                announcement['priority'] as String,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: announcement['priority'] == 'High'
-                      ? Colors.red
-                      : announcement['priority'] == 'Medium'
-                      ? Colors.orange
-                      : Colors.green,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildLeaveDetails() {
-    return [
-      _buildLeaveItem('Available Days', '15', Colors.green),
-      _buildLeaveItem('Used Days', '5', Colors.orange),
-      _buildLeaveItem('Pending Days', '2', Colors.blue),
-      _buildLeaveItem('Next Leave', 'Jan 15', Colors.purple),
-    ];
-  }
-
-  Widget _buildLeaveItem(String label, String value, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.calendar_today_rounded, color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildTasksList() {
-    final tasks = [
-      {
-        'title': 'Complete Project Report',
-        'status': 'Pending',
-        'due': 'Dec 25',
-      },
-      {
-        'title': 'Review Q4 Performance',
-        'status': 'In Progress',
-        'due': 'Dec 30',
-      },
-      {
-        'title': 'Update Employee Records',
-        'status': 'Completed',
-        'due': 'Dec 20',
-      },
-      {'title': 'Schedule Team Meeting', 'status': 'Pending', 'due': 'Jan 5'},
-    ];
-
-    return tasks.map((task) {
-      Color statusColor = task['status'] == 'Completed'
-          ? Colors.green
-          : task['status'] == 'In Progress'
-          ? Colors.orange
-          : Colors.red;
-
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.task_alt_rounded,
-                color: Colors.orange,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task['title'] as String,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Due: ${task['due']}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                task['status'] as String,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  List<Widget> _buildHolidaysList() {
-    final holidays = [
-      {'name': 'Christmas', 'date': 'Dec 25', 'type': 'National'},
-      {'name': 'New Year', 'date': 'Jan 1', 'type': 'National'},
-      {
-        'name': 'Martin Luther King Jr. Day',
-        'date': 'Jan 20',
-        'type': 'Federal',
-      },
-      {'name': 'Presidents Day', 'date': 'Feb 17', 'type': 'Federal'},
-    ];
-
-    return holidays.map((holiday) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.purple.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.purple.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.celebration_rounded,
-                color: Colors.purple,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    holiday['name'] as String,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    holiday['date'] as String,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.celebration_rounded,
-              color: Colors.purple.shade400,
-              size: 20,
-            ),
-          ],
-        ),
-      );
-    }).toList();
   }
 }

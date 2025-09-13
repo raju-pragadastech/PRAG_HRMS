@@ -1135,9 +1135,15 @@ class _DashboardScreenState extends State<DashboardScreen>
             _clockInTime = null;
             _elapsedTime = Duration.zero;
           });
+          // Force immediate UI update
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {});
+            }
+          });
         }
         _timer?.cancel();
-        _showSuccessSnackBar('You have already clocked in today');
+        _showSuccessSnackBar('Already clocked in.');
         return;
       }
 
@@ -1154,6 +1160,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           // Force immediate UI update and start timer
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
+              setState(() {});
               _timer?.cancel();
               _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
                 if (mounted) {
@@ -1165,7 +1172,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             }
           });
         }
-        _showSuccessSnackBar('Clock-in is started.');
+        _showSuccessSnackBar('You are clocked in successful');
         _refreshAttendanceData();
       } else {
         _showErrorSnackBar(
@@ -1257,6 +1264,12 @@ class _DashboardScreenState extends State<DashboardScreen>
         _clockInTime = null;
         _elapsedTime = Duration.zero;
       });
+      // Force immediate UI update
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
 
     // Cancel timer immediately
@@ -1287,6 +1300,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (response.isSuccessful) {
         // Load today's total hours before updating UI
         await _loadTodayTotalHours();
+
+        // Force immediate UI update to show total hours card
+        if (mounted) {
+          setState(() {});
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {});
+            }
+          });
+        }
 
         _showSuccessSnackBar(
           'Clocked out successfully. Total hours: ${response.totalHours ?? _todayTotalHours}',
