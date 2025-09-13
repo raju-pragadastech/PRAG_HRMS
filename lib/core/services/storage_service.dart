@@ -222,4 +222,28 @@ class StorageService {
     print('💾 Retrieved theme mode: $themeMode');
     return themeMode;
   }
+
+  // Save profile image URL for a user
+  static Future<void> saveProfileImageUrl(
+    String userId,
+    String imageUrl,
+  ) async {
+    print('💾 Saving profile image URL for user $userId: $imageUrl');
+    await _storage.write(key: 'profile_image_$userId', value: imageUrl);
+    print('💾 Profile image URL saved successfully');
+  }
+
+  // Get profile image URL for a user
+  static Future<String?> getProfileImageUrl(String userId) async {
+    final imageUrl = await _storage.read(key: 'profile_image_$userId');
+    print('💾 Retrieved profile image URL for user $userId: $imageUrl');
+    return imageUrl;
+  }
+
+  // Remove profile image URL for a user
+  static Future<void> removeProfileImageUrl(String userId) async {
+    print('💾 Removing profile image URL for user $userId');
+    await _storage.delete(key: 'profile_image_$userId');
+    print('💾 Profile image URL removed successfully');
+  }
 }

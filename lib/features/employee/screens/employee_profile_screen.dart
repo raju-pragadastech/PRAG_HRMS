@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/employee.dart';
 import '../../../core/routes/app_routes.dart';
+import '../../../core/widgets/profile_image_picker.dart';
 
 class EmployeeProfileScreen extends StatefulWidget {
   const EmployeeProfileScreen({super.key});
@@ -205,63 +206,51 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
         padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            // Profile Photo on Left with Upload Option
-            GestureDetector(
-              onTap: _showImagePicker,
-              child: Container(
+            // Profile Photo with Upload Option
+            if (_employee?.employeeId != null)
+              ProfileImagePicker(
+                currentImageUrl: _employee?.profileImage,
+                userId: _employee!.employeeId!,
+                size: 70.0,
+                onImageChanged: (imageUrl) {
+                  // Update the employee object with new image URL
+                  if (mounted) {
+                    setState(() {
+                      _employee = Employee(
+                        employeeId: _employee?.employeeId,
+                        firstName: _employee?.firstName,
+                        lastName: _employee?.lastName,
+                        email: _employee?.email,
+                        phone: _employee?.phone,
+                        department: _employee?.department,
+                        position: _employee?.position,
+                        role: _employee?.role,
+                        profileImage: imageUrl.isNotEmpty ? imageUrl : null,
+                        joinDate: _employee?.joinDate,
+                        status: _employee?.status,
+                        address: _employee?.address,
+                        dateOfBirth: _employee?.dateOfBirth,
+                        emergencyContact: _employee?.emergencyContact,
+                        manager: _employee?.manager,
+                        workLocation: _employee?.workLocation,
+                        experience: _employee?.experience,
+                        education: _employee?.education,
+                        skills: _employee?.skills,
+                      );
+                    });
+                  }
+                },
+              )
+            else
+              Container(
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.3),
-                    width: 3,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.2),
-                      spreadRadius: 1,
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  color: Colors.grey[200],
                 ),
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundColor: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.1),
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 40,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    // Upload Icon Overlay
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child: Icon(Icons.person, size: 35, color: Colors.grey[400]),
               ),
-            ),
             const SizedBox(width: 20),
             // Employee Information on Right
             Expanded(
@@ -651,90 +640,6 @@ class _EmployeeProfileScreenState extends State<EmployeeProfileScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showImagePicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'Update Profile Photo',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            _buildImageOption(
-              icon: Icons.camera_alt_rounded,
-              title: 'Take Photo',
-              onTap: _takePhoto,
-            ),
-            _buildImageOption(
-              icon: Icons.photo_library_rounded,
-              title: 'Choose from Gallery',
-              onTap: _chooseFromGallery,
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageOption({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.indigo.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: Colors.indigo),
-      ),
-      title: Text(title),
-      onTap: onTap,
-    );
-  }
-
-  void _takePhoto() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Camera functionality would be implemented here'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  void _chooseFromGallery() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Gallery functionality would be implemented here'),
-        backgroundColor: Colors.blue,
       ),
     );
   }

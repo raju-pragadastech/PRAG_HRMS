@@ -6,10 +6,17 @@ import 'core/services/theme_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/api_service.dart';
 import 'core/services/connectivity_service.dart';
+import 'core/services/profile_image_notifier.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  try {
+    await Firebase.initializeApp();
+    print('✅ Firebase initialized successfully');
+  } catch (e) {
+    print('❌ Firebase initialization failed: $e');
+  }
 
   // Preload theme before first frame to avoid light→dark flash
   final themeService = ThemeService();
@@ -83,8 +90,15 @@ class _HrmsAppState extends State<HrmsApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ThemeService>(
-      create: (context) => _themeService,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeService>(
+          create: (context) => _themeService,
+        ),
+        ChangeNotifierProvider<ProfileImageNotifier>(
+          create: (context) => ProfileImageNotifier(),
+        ),
+      ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, child) {
           return MaterialApp(

@@ -361,38 +361,24 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Welcome message - always aligned to left
-          Row(
+          // Welcome message
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Welcome back, ${_isLoadingEmployee ? 'Loading...' : (_employee?.firstName ?? 'Employee')} 👋',
-                            style: TextStyle(
-                              fontSize: 26, // Increased from 22 to 26
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyLarge?.color,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Employee ID: ${_isLoadingEmployee ? 'Loading...' : (_employee?.employeeId ?? _fallbackEmployeeId ?? 'N/A')}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  ],
+              Text(
+                'Welcome back, ${_isLoadingEmployee ? 'Loading...' : (_employee?.firstName ?? 'Employee')} 👋',
+                style: TextStyle(
+                  fontSize: 26, // Increased from 22 to 26
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Employee ID: ${_isLoadingEmployee ? 'Loading...' : (_employee?.employeeId ?? _fallbackEmployeeId ?? 'N/A')}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ],

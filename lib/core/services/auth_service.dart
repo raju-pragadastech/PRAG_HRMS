@@ -9,6 +9,7 @@ import 'storage_service.dart';
 import 'device_service.dart';
 import 'theme_service.dart';
 import 'attendance_data_manager.dart';
+import 'api_image_service.dart';
 
 class AuthService {
   static ThemeService? _themeService;
@@ -228,14 +229,55 @@ class AuthService {
 
       // Try to get employee data from storage first (from login response)
       final storedEmployeeData = await StorageService.getEmployeeData();
+      Employee? employee;
+
       if (storedEmployeeData != null) {
         print('📱 Using stored employee data from login response');
-        return Employee.fromJson(storedEmployeeData);
+        employee = Employee.fromJson(storedEmployeeData);
+      } else {
+        // Fallback to API call if no stored data
+        print('📱 No stored employee data, making API call');
+        employee = await ApiService.getEmployeeProfile(employeeId);
       }
 
-      // Fallback to API call if no stored data
-      print('📱 No stored employee data, making API call');
-      return await ApiService.getEmployeeProfile(employeeId);
+      // Fetch profile image from API if employee exists
+      if (employee != null) {
+        try {
+          final profileImageUrl = await ApiImageService.getProfileImageUrl(
+            employeeId,
+          );
+          if (profileImageUrl != null) {
+            // Create updated employee with profile image
+            employee = Employee(
+              employeeId: employee.employeeId,
+              firstName: employee.firstName,
+              lastName: employee.lastName,
+              email: employee.email,
+              phone: employee.phone,
+              department: employee.department,
+              position: employee.position,
+              role: employee.role,
+              profileImage: profileImageUrl,
+              joinDate: employee.joinDate,
+              status: employee.status,
+              address: employee.address,
+              dateOfBirth: employee.dateOfBirth,
+              emergencyContact: employee.emergencyContact,
+              manager: employee.manager,
+              workLocation: employee.workLocation,
+              experience: employee.experience,
+              education: employee.education,
+              skills: employee.skills,
+            );
+            print('📱 Profile image loaded from API: $profileImageUrl');
+          }
+        } catch (e) {
+          print('⚠️ Error fetching profile image: $e');
+          // Continue without profile image if API fails
+        }
+      }
+
+      return employee;
     } catch (e) {
       print('❌ Error getting employee profile: $e');
       // If token is invalid/expired, clear storage and return null

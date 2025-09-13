@@ -8,6 +8,8 @@ import '../../../core/services/theme_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/employee.dart';
 import '../../../core/widgets/theme_selector.dart';
+import '../../../core/widgets/profile_image_picker.dart';
+import '../../../core/services/profile_image_notifier.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -96,46 +98,62 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => _showThemeSelector(),
               tooltip: 'Theme Settings',
             ),
-            // Profile Photo (Smaller)
+            // Profile Photo (Navigate to Profile)
             Container(
               margin: const EdgeInsets.only(right: 16),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, AppRoutes.employeeProfile);
-                },
-                child: Tooltip(
-                  message: 'View Profile',
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    ),
-                    child: _employee?.profileImage != null
-                        ? ClipOval(
-                            child: Image.network(
-                              _employee!.profileImage!,
-                              width: 32,
-                              height: 32,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.person_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                );
-                              },
-                            ),
-                          )
-                        : const Icon(
-                            Icons.person_rounded,
-                            color: Colors.white,
-                            size: 18,
+              child: Consumer<ProfileImageNotifier>(
+                builder: (context, profileNotifier, child) {
+                  // Get the current profile image URL from notifier or employee data
+                  final currentImageUrl =
+                      profileNotifier.hasProfileImage(
+                        _employee?.employeeId ?? '',
+                      )
+                      ? profileNotifier.currentProfileImageUrl
+                      : _employee?.profileImage;
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, AppRoutes.employeeProfile);
+                    },
+                    child: Tooltip(
+                      message: 'View Profile',
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.2),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.3),
                           ),
-                  ),
-                ),
+                        ),
+                        child:
+                            currentImageUrl != null &&
+                                currentImageUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  currentImageUrl,
+                                  width: 32,
+                                  height: 32,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.person_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    );
+                                  },
+                                ),
+                              )
+                            : const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -230,102 +248,84 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    GestureDetector(
-                      onTap: _showImagePicker,
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: themeService.isDarkMode
-                                  ? Colors.white.withOpacity(
-                                      0.2,
-                                    ) // White for dark theme
-                                  : Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary.withOpacity(
-                                      0.2,
-                                    ), // Theme color for light theme
-                              border: Border.all(
-                                color: themeService.isDarkMode
-                                    ? Colors.white.withOpacity(
-                                        0.3,
-                                      ) // White for dark theme
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary.withOpacity(
-                                        0.3,
-                                      ), // Theme color for light theme
-                                width: 2,
-                              ),
-                            ),
-                            child: _employee?.profileImage != null
-                                ? ClipOval(
-                                    child: Image.network(
-                                      _employee!.profileImage!,
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Icon(
-                                          Icons.person_rounded,
-                                          color: themeService.isDarkMode
-                                              ? Colors
-                                                    .white // White for dark theme
-                                              : Theme.of(context)
-                                                    .colorScheme
-                                                    .onPrimary, // Theme color for light theme
-                                          size: 30,
-                                        );
-                                      },
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.person_rounded,
-                                    color: themeService.isDarkMode
-                                        ? Colors
-                                              .white // White for dark theme
-                                        : Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary, // Theme color for light theme
-                                    size: 30,
-                                  ),
+                    // Profile Image Picker with plus icon
+                    if (_employee?.employeeId != null)
+                      Consumer<ProfileImageNotifier>(
+                        builder: (context, profileNotifier, child) {
+                          // Get the current profile image URL from notifier or employee data
+                          final currentImageUrl =
+                              profileNotifier.hasProfileImage(
+                                _employee!.employeeId!,
+                              )
+                              ? profileNotifier.currentProfileImageUrl
+                              : _employee?.profileImage;
+
+                          return ProfileImagePicker(
+                            currentImageUrl: currentImageUrl,
+                            userId: _employee!.employeeId!,
+                            size: 60.0,
+                            onImageChanged: (imageUrl) {
+                              // Update the employee object with new image URL
+                              if (mounted) {
+                                setState(() {
+                                  _employee = Employee(
+                                    employeeId: _employee?.employeeId,
+                                    firstName: _employee?.firstName,
+                                    lastName: _employee?.lastName,
+                                    email: _employee?.email,
+                                    phone: _employee?.phone,
+                                    department: _employee?.department,
+                                    position: _employee?.position,
+                                    role: _employee?.role,
+                                    profileImage: imageUrl.isNotEmpty
+                                        ? imageUrl
+                                        : null,
+                                    joinDate: _employee?.joinDate,
+                                    status: _employee?.status,
+                                    address: _employee?.address,
+                                    dateOfBirth: _employee?.dateOfBirth,
+                                    emergencyContact:
+                                        _employee?.emergencyContact,
+                                    manager: _employee?.manager,
+                                    workLocation: _employee?.workLocation,
+                                    experience: _employee?.experience,
+                                    education: _employee?.education,
+                                    skills: _employee?.skills,
+                                  );
+                                });
+                              }
+                            },
+                          );
+                        },
+                      )
+                    else
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: themeService.isDarkMode
+                              ? Colors.white.withOpacity(0.2)
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.onPrimary.withOpacity(0.2),
+                          border: Border.all(
+                            color: themeService.isDarkMode
+                                ? Colors.white.withOpacity(0.3)
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary.withOpacity(0.3),
+                            width: 2,
                           ),
-                          // Refresh button
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: _refreshEmployeeData,
-                              child: Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: themeService.isDarkMode
-                                      ? Colors
-                                            .white // White for dark theme
-                                      : Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary, // Theme color for light theme
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Theme.of(context).primaryColor,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.refresh_rounded,
-                                  size: 12,
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
+                        child: Icon(
+                          Icons.person_rounded,
+                          color: themeService.isDarkMode
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onPrimary,
+                          size: 30,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 8),
                     if (_isLoadingEmployee)
                       SizedBox(
