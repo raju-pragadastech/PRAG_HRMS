@@ -445,6 +445,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               _buildDrawerItem(
+                icon: Icons.receipt_long_rounded,
+                title: 'Expenses',
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, AppRoutes.expenses);
+                },
+              ),
+              _buildDrawerItem(
                 icon: Icons.campaign_rounded,
                 title: 'Announcements',
                 color: Colors.red,

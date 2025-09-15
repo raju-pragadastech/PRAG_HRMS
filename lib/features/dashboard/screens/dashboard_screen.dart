@@ -555,50 +555,88 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildTodayHoursCard() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primaryContainer.withOpacity(isDark ? 0.35 : 0.95),
+            colorScheme.secondaryContainer.withOpacity(isDark ? 0.30 : 0.85),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.6)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.access_time_rounded,
-            color: Colors.blue.shade600,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.access_time_rounded,
+              color: colorScheme.primary,
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Today\'s Total Hours',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  'Today\'s total hours',
+                  style:
+                      Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ) ??
+                      TextStyle(
+                        color: colorScheme.onPrimaryContainer,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _formatHoursHuman(_todayTotalHours),
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.blue.shade800,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style:
+                      Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                        fontSize: 22,
+                      ) ??
+                      TextStyle(
+                        color: colorScheme.onPrimaryContainer,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
               ],
             ),
           ),
           Icon(
             Icons.check_circle_rounded,
-            color: Colors.green.shade600,
-            size: 24,
+            color: colorScheme.tertiary,
+            size: 26,
           ),
         ],
       ),
@@ -730,6 +768,13 @@ class _DashboardScreenState extends State<DashboardScreen>
                     color: Colors.green,
                     onTap: () =>
                         Navigator.pushNamed(context, AppRoutes.attendance),
+                  ),
+                  _buildQuickActionCard(
+                    icon: Icons.receipt_long_rounded,
+                    label: 'Expenses',
+                    color: Colors.teal,
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.expenses),
                   ),
                 ],
               ),

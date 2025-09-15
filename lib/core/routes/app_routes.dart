@@ -11,6 +11,7 @@ import '../../features/services/screens/services_screen.dart';
 import '../../features/announcements/screens/announcements_screen.dart';
 import '../../features/support/screens/support_screen.dart';
 import '../../features/debug/debug_screen.dart';
+import '../../features/expenses/screens/expenses_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -25,6 +26,7 @@ class AppRoutes {
   static const String announcements = '/announcements';
   static const String support = '/support';
   static const String debug = '/debug';
+  static const String expenses = '/expenses';
 
   static Map<String, WidgetBuilder> get routes => {
     splash: (context) => const SplashScreen(),
@@ -39,5 +41,6 @@ class AppRoutes {
     announcements: (context) => const AnnouncementsScreen(),
     support: (context) => const SupportScreen(),
     debug: (context) => const DebugScreen(),
+    expenses: (context) => const ExpensesScreen(),
   };
 }
